@@ -17,7 +17,7 @@ Module MaxGUI.Drivers
 
 ModuleInfo "Version: 0.04"
 ModuleInfo "Author: Simon Armstrong"
-ModuleInfo "License: BSD License"
+ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 
 ModuleInfo "History: 0.04 Release"

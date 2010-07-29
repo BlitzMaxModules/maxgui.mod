@@ -4,9 +4,9 @@ End Rem
 Module MaxGUI.Win32MaxGUIEx
 
 ModuleInfo "Version: 0.73"
-ModuleInfo "Copyright: Armstrong Communications Ltd."
 ModuleInfo "Author: Simon Armstrong, Seb Hollington"
-ModuleInfo "License: BSD License"
+ModuleInfo "License: zlib/libpng"
+ModuleInfo "Copyright: Armstrong Communications Ltd."
 
 ModuleInfo "History: 0.73 Release"
 ModuleInfo "History: Added GetStatusText() implementation."

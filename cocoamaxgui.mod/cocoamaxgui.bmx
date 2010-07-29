@@ -15,7 +15,7 @@ Strict
 
 ModuleInfo "Version: 1.53"
 ModuleInfo "Author: Simon Armstrong, Seb Hollington"
-ModuleInfo "License: BSD License"
+ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd."
 
 ModuleInfo "History: 1.53 Release"

@@ -7,7 +7,7 @@ Module MaxGUI.Localization
 
 ModuleInfo "Version: 1.02"
 ModuleInfo "Author: Seb Hollington"
-ModuleInfo "License: BSD License"
+ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Seb Hollington"
 
 ModuleInfo "History: 1.02 Release"

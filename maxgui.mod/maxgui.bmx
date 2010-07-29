@@ -8,7 +8,7 @@ Module MaxGUI.MaxGUI
 
 ModuleInfo "Version: 1.33"
 ModuleInfo "Author: Simon Armstrong, Mark Sibly"
-ModuleInfo "License: BSD License"
+ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 
 ModuleInfo "History: 1.33 Release"

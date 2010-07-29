@@ -11,7 +11,7 @@ Import pub.libpng
 
 ModuleInfo "Version: 1.56"
 ModuleInfo "Author: Simon Armstrong, Seb Hollington"
-ModuleInfo "License: BSD License"
+ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd."
 
 ModuleInfo "Credit: FLTKMaxGUI is based in part on the work of the FLTK project (http://www.fltk.org)."
