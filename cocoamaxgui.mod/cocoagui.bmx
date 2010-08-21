@@ -410,6 +410,10 @@ Type TNSGadget Extends TGadget
 		EndIf
 		
 		NSInitGadget gadget
+
+		If internalclass<>GADGET_TOOLBAR 'toolbars retain name to key insertgadgetitem
+			gadget.name = Null
+		EndIf
 		
 		GadgetMap.Insert TIntWrapper.Create(gadget.handle),gadget
 		If gadget.view And gadget.handle <> gadget.view Then
@@ -563,9 +567,7 @@ Type TNSGadget Extends TGadget
 	End Method
 
 	Method GetText$()
-		Local nsname$=NSGetText(Self)
-		If nsname Return nsname
-		Return name
+		Return NSGetText(Self)
 	End Method
 
 	Method SetFont(pFont:TGuiFont)

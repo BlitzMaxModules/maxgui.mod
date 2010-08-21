@@ -112,7 +112,7 @@ struct nsgadget{
 	nsgadget	*group;
 	BBObject	*kidlist;
 	int			x,y,w,h;
-	BBString		*text;
+	BBString		*textarg;
 	void			*extra;
 	int			style, sensitivity;
 	int			visible,total;
@@ -2276,7 +2276,7 @@ void NSInitGadget(nsgadget *gadget){
 	NSImage			*image;
 		
 	rect=NSMakeRect(gadget->x,gadget->y,gadget->w,gadget->h);
-	text=NSStringFromBBString(gadget->text);
+	text=NSStringFromBBString(gadget->textarg);
 	style=gadget->style;flags=0;
 	group=gadget->group;
 	if (group==(nsgadget*)&bbNullObject) group=0;
@@ -2429,17 +2429,11 @@ void NSInitGadget(nsgadget *gadget){
 		break;		
 	case GADGET_COMBOBOX:
 		if (rect.size.height > 26) rect.size.height = 26;
-		if (style&COMBOBOX_EDITABLE){
-			combobox=[[NSComboBox alloc] initWithFrame:rect];
-			[combobox setUsesDataSource:NO];
-			[combobox setCompletes:YES];
-			[combobox setDelegate:GlobalApp];
-		} else {
-			combobox=[[NSPopUpButton alloc] initWithFrame:rect pullsDown:NO];
-			[combobox setMenu:[[[NSMenu alloc] initWithTitle:@""] autorelease]];
-			[combobox synchronizeTitleAndSelectedItem];
-			[[NSNotificationCenter defaultCenter] addObserver:(id)GlobalApp selector:@selector(comboBoxSelectionDidChange:) name:@"NSPopUpButtonWillPopUpNotification" object:combobox];
-		}
+		combobox=[[NSComboBox alloc] initWithFrame:rect];
+		[combobox setUsesDataSource:NO];
+		[combobox setCompletes:YES];
+		[combobox setDelegate:GlobalApp];		
+		[combobox setEditable:(style&COMBOBOX_EDITABLE)?YES:NO];			
 		if (view) [view addSubview:combobox];		
 		gadget->handle=combobox;
 		gadget->view=combobox;
@@ -3599,12 +3593,8 @@ void NSAddItem(nsgadget *gadget,int index,BBString *data,BBString *tip,NSImage *
 		break;
 	case GADGET_COMBOBOX:
 		combo=(NSControl*)gadget->handle;
-		if([combo isKindOfClass:[NSComboBox class]]){
-			[combo insertItemWithObjectValue:text atIndex:index];
-		} else {
-			[combo insertItemWithTitle:text atIndex:index];
-			[[combo itemAtIndex:index] setImage:image];
-		}
+		[combo insertItemWithObjectValue:text atIndex:index];
+//		[[combo itemAtIndex:index] setImage:image];
 		break;
 	case GADGET_TABBER:
 		tabber=(NSTabView*)gadget->handle;	
@@ -3659,12 +3649,8 @@ void NSSetItem(nsgadget *gadget,int index,BBString *data,BBString *tip,NSImage *
 	case GADGET_COMBOBOX:
 		combo=(NSControl*)gadget->handle;
 		[combo removeItemAtIndex:index];
-		if([combo isKindOfClass:[NSComboBox class]]) {
-			[combo insertItemWithObjectValue:text atIndex:index];
-		} else {
-			[combo insertItemWithTitle:text atIndex:index];
-			[[combo itemAtIndex:index] setImage:image];
-		}
+		[combo insertItemWithObjectValue:text atIndex:index];
+//		[[combo itemAtIndex:index] setImage:image];
 		break;
 	case GADGET_TABBER:
 		tabber=(NSTabView*)gadget->handle;
@@ -3727,15 +3713,10 @@ void NSSelectItem(nsgadget *gadget,int index,int state){
 		break;
 	case GADGET_COMBOBOX:
 		combo=(NSControl*)gadget->handle;
-		if([combo isKindOfClass:[NSComboBox class]])
-			[combo setDelegate:nil];
+		[combo setDelegate:nil];
 		[combo selectItemAtIndex:index];
-		if([combo isKindOfClass:[NSComboBox class]])
-			[combo setObjectValue:[combo objectValueOfSelectedItem]];
-		else
-			[combo setObjectValue:[combo objectValue]];
-		if([combo isKindOfClass:[NSComboBox class]])
-			[combo setDelegate:GlobalApp];
+		[combo setObjectValue:[combo objectValueOfSelectedItem]];
+		[combo setDelegate:GlobalApp];
 		break;
 	case GADGET_TABBER:
 		tabber=(NSTabView*)gadget->handle;

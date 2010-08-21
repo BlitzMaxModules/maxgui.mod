@@ -13,11 +13,13 @@ Module MaxGUI.CocoaMaxGUI
 
 Strict
 
-ModuleInfo "Version: 1.53"
+ModuleInfo "Version: 1.54"
 ModuleInfo "Author: Simon Armstrong, Seb Hollington"
-ModuleInfo "License: zlib/libpng"
+ModuleInfo "License: BSD License"
 ModuleInfo "Copyright: Blitz Research Ltd."
 
+ModuleInfo "History: 1.54 Release"
+ModuleInfo "History: Reduced ambiguous use of gadget.(arg)name$ /topic=91292"
 ModuleInfo "History: 1.53 Release"
 ModuleInfo "History: Added GetStatusText() implementation."
 ModuleInfo "History: 1.52b Release"
