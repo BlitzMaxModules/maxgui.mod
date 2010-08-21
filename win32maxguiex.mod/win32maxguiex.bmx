@@ -3,11 +3,13 @@ bbdoc: MaxGUI Drivers/Win32MaxGUIEx
 End Rem
 Module MaxGUI.Win32MaxGUIEx
 
-ModuleInfo "Version: 0.73"
+ModuleInfo "Version: 0.74"
 ModuleInfo "Author: Simon Armstrong, Seb Hollington"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Armstrong Communications Ltd."
 
+ModuleInfo "History: 0.74 Release"
+ModuleInfo "History: Removed composite mode bit banging in window resizing states /topic=91447"
 ModuleInfo "History: 0.73 Release"
 ModuleInfo "History: Added GetStatusText() implementation."
 ModuleInfo "History: 0.72 Release"
@@ -1384,6 +1386,7 @@ Type TWindowsGadget Extends TGadget
 		Next
 	EndMethod
 	
+Rem	
 	Method StartDoubleBuffer()
 		For Local tmpGadget:TWindowsGadget = EachIn kids
 			tmpGadget.StartDoubleBuffer()
@@ -1395,7 +1398,7 @@ Type TWindowsGadget Extends TGadget
 			tmpGadget.EndDoubleBuffer()
 		Next
 	EndMethod
-	
+EndRem	
 EndType
 
 
@@ -1446,10 +1449,7 @@ Type TWindowsDesktop Extends TWindowsGadget
 EndType
 
 Type TWindowsWindow Extends TWindowsGadget
-	
-	'Disable double-buffering if we aren't using the latest version of common controls (< Windows Vista).
-	Global _disableDoubleBuffering = (TWindowsGUIDriver.CheckCommonControlVersion()<2)
-	
+		
 	Field	_wstyle, _xstyle
 	Field	_minwidth,_minheight,_maxwidth = -1,_maxheight = -1
 	Field	_menu:TWindowsMenu
@@ -1826,23 +1826,7 @@ Type TWindowsWindow Extends TWindowsGadget
 					PostGuiEvent EVENT_WINDOWACCEPT,0,0,pt[0],pt[1],path
 				Next
 				DragFinish wp
-
-			Case WM_ENTERSIZEMOVE
-				'Speeds up resize, by using double-buffering (although increases CPU usage).
-				'This should not be used if the window has transparency (WS_EX_LAYERED) as it causes strange artifacts on Windows XP.
-				If Not _disableDoubleBuffering And Not(GetWindowLongW(hwnd, GWL_EXSTYLE) & (WS_EX_LAYERED|WS_EX_COMPOSITED)) Then
-					StartDoubleBuffer()
-					SetWindowLongW(hwnd, GWL_EXSTYLE, GetWindowLongW(hwnd, GWL_EXSTYLE)|WS_EX_COMPOSITED)
-				EndIf
-				
-			Case WM_EXITSIZEMOVE
-				'Make sure to remove the flag when finished sizing to avoid Win API bugs with WS_EX_COMPOSITED.
-				'This should not be used if the window has transparency (WS_EX_LAYERED) as it causes strange artifacts on Windows XP.
-				If Not _disableDoubleBuffering And Not((GetWindowLongW(hwnd, GWL_EXSTYLE)~WS_EX_COMPOSITED) & (WS_EX_LAYERED|WS_EX_COMPOSITED)) Then
-					SetWindowLongW(hwnd, GWL_EXSTYLE, GetWindowLongW(hwnd, GWL_EXSTYLE)&~WS_EX_COMPOSITED)
-					EndDoubleBuffer()
-				EndIf
-				
+ 
 		End Select
 		
 		Return Super.WndProc(hwnd,msg,wp,lp)
@@ -3252,29 +3236,7 @@ Type TWindowsComboBox Extends TWindowsGadget
 				PostGuiEvent EVENT_GADGETACTION,-1
 		End Select
 	EndMethod
-	
-	Field tmpHidden:Int
-	
-	Method StartDoubleBuffer()
-		If _editHwnd
-			tmpHidden = State()&STATE_HIDDEN
-			Super.SetShow False
-		EndIf
-		Super.StartDoubleBuffer()
-	EndMethod
-	
-	Method SetShow(show)
-		tmpHidden = show
-		Super.SetShow(tmpHidden)
-	EndMethod
-	
-	Method EndDoubleBuffer()
-		If _editHwnd Then
-			Super.SetShow (Not tmpHidden)
-		EndIf
-		Super.EndDoubleBuffer()
-	EndMethod
-	
+
 	Method Class()
 		Return GADGET_COMBOBOX
 	EndMethod
@@ -4246,11 +4208,7 @@ Type TWindowsPanel Extends TWindowsGadget
 			If (style&PANEL_CANVAS) Then _type=PANELCANVAS																				
 			hwnd=CreateWindowExW(xstyle,TWindowsGUIDriver.ClassName(),"",wstyle,0,0,0,0,parent,hotkey,GetModuleHandleW(Null),Null)
 		EndIf
-		
-		If (style & PANEL_CANVAS) Then
-			TWindowsWindow._disableDoubleBuffering = True
-		EndIf
-		
+				
 		Register GADGET_PANEL,hwnd,client
 		If (style & PANEL_ACTIVE) Then sensitivity = SENSITIZE_ALL
 		
