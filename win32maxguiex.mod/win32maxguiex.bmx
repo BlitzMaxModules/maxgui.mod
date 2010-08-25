@@ -9,6 +9,8 @@ ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Armstrong Communications Ltd."
 
 ModuleInfo "History: 0.74 Release"
+ModuleInfo "History: Added RemoveColor interface"
+ModuleInfo "History: Modified licence"
 ModuleInfo "History: Removed composite mode bit banging in window resizing states /topic=91447"
 ModuleInfo "History: 0.73 Release"
 ModuleInfo "History: Added GetStatusText() implementation."
@@ -936,6 +938,12 @@ Type TWindowsGadget Extends TGadget
 		If _bgbrush Then DeleteObject _bgbrush
 		_bgcolor = (blue Shl 16) | (green Shl 8) | red
 		_bgbrush=CreateSolidBrush(_bgcolor)
+		RedrawGadget(Self)
+	EndMethod
+
+	Method RemoveColor()
+		If _bgbrush Then DeleteObject _bgbrush
+		_bgbrush=0
 		RedrawGadget(Self)
 	EndMethod
 	
@@ -1929,6 +1937,14 @@ Type TWindowsButton Extends TWindowsGadget
 		EndIf
 		Super.SetColor(r,g,b)
 	EndMethod
+
+	Method RemoveColor()
+		If Not (style&7) Then
+			SetWindowLongW(_hwnd,GWL_STYLE,GetWindowLongW(_hwnd,GWL_STYLE)&~BS_OWNERDRAW)
+			_hTheme=0
+		EndIf
+		Super.RemoveColor()
+	EndMethod
 	
 	Method State()
 		Local t=Super.State()
@@ -2653,6 +2669,10 @@ Type TWindowsTextArea Extends TWindowsGadget
 	Method SetColor(r,g,b)
 		SendMessageW _hwnd,EM_SETBKGNDCOLOR,0,((b Shl 16)|(g Shl 8)|r)
 	EndMethod
+
+	Method RemoveColor()
+		SendMessageW _hwnd,EM_SETBKGNDCOLOR,1,0
+	EndMethod
 	
 	Method GetCursorPos(units)
 		Local cr:CHARRANGE = New CHARRANGE
@@ -2875,6 +2895,11 @@ Type TWindowsListBox Extends TWindowsGadget
 	Method SetColor(r,g,b)
 		SendMessageW _hwnd,LVM_SETBKCOLOR ,0,(b Shl 16)|(g Shl 8)|r
 		SendMessageW _hwnd,LVM_SETTEXTBKCOLOR ,0,(b Shl 16)|(g Shl 8)|r
+	EndMethod
+
+	Method RemoveColor()
+		SendMessageW _hwnd,LVM_SETBKCOLOR ,1,0
+		SendMessageW _hwnd,LVM_SETTEXTBKCOLOR ,1,0
 	EndMethod
 
 	Method SetTextColor(r,g,b)
@@ -3802,6 +3827,10 @@ Type TWindowsTreeView Extends TWindowsGadget
 		SendMessageW _hwnd,TVM_SETBKCOLOR,0,(b Shl 16)|(g Shl 8)|r
 	EndMethod
 
+	Method RemoveColor()
+		SendMessageW _hwnd,TVM_SETBKCOLOR,1,0
+	EndMethod
+
 	Method SetTextColor(r,g,b)
 		SendMessageW _hwnd,TVM_SETTEXTCOLOR,0,(b Shl 16)|(g Shl 8)|r
 	EndMethod
@@ -4162,6 +4191,11 @@ Type TWindowsProgressBar Extends TWindowsGadget
 	Method SetColor(r,g,b)
 		'Only works in Classic mode, but it's better than nothing.
 		SendMessageW _hwnd,PBM_SETBKCOLOR ,0,(b Shl 16)|(g Shl 8)|r
+	EndMethod
+
+	Method RemoveColor()
+		'Only works in Classic mode, but it's better than nothing.
+		SendMessageW _hwnd,PBM_SETBKCOLOR ,1,0
 	EndMethod
 
 	Method SetTextColor(r,g,b)
