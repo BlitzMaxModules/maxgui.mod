@@ -774,9 +774,14 @@ static CocoaApp *GlobalApp;
 	return NO;
 }
 -(void)setColor:(NSColor *)rgb{
-	if (color) [color release];
-	color=[rgb colorWithAlphaComponent:1.0];
-	[color retain];
+	if (color){
+		[color release];
+		color=0;
+	}
+	if(rgb){
+		color=[rgb colorWithAlphaComponent:1.0];
+		[color retain];
+	}
 	[self setNeedsDisplay:YES];
 }
 -(void)setImage:(NSImage *)img withFlags:(int)flags{
@@ -1529,7 +1534,12 @@ tableColumn:(NSTableColumn *)aTableColumn row:(int)row mouseLocation:(NSPoint)mo
 	[self setInsertionPointColor:color];	
 }
 -(void)setColor:(NSColor*)color{
-	[self setBackgroundColor:color];	
+	if(color){
+		[self setBackgroundColor:color];	
+		[self setDrawsBackground:true];
+	}else{
+		[self setDrawsBackground:false];
+	}
 }
 -(void)setFont:(NSFont*)font{
 	[styles setObject:font forKey:NSFontAttributeName];
@@ -3294,6 +3304,32 @@ void NSRethink(nsgadget *gadget){
 	[view setNeedsDisplay:YES];	
 }
 
+void NSRemoveColor(nsgadget *gadget){
+	switch (gadget->internalclass){
+	case GADGET_BUTTON:
+		if ([[gadget->handle cell] respondsToSelector:@selector(setDrawsBackground)]){
+			[[gadget->handle cell] setDrawsBackground:false];
+		}
+		break;
+	case GADGET_WINDOW:
+		[gadget->handle setBackgroundColor:nil];
+		[gadget->handle display];
+		break;
+	case GADGET_LABEL:
+		if((gadget->style&3)==LABEL_SEPARATOR) break;
+	case GADGET_COMBOBOX:
+	case GADGET_TEXTFIELD:
+		[gadget->handle setDrawsBackground:false];
+		break;
+	case GADGET_LISTBOX:
+	case GADGET_TREEVIEW:
+	case GADGET_PANEL:
+	case GADGET_TEXTAREA:
+		[gadget->handle setColor:nil];
+		break;	
+	}
+}
+
 void NSSetColor(nsgadget *gadget,int r,int g,int b){
 	NSColor				*color;
 
@@ -3303,6 +3339,7 @@ void NSSetColor(nsgadget *gadget,int r,int g,int b){
 	case GADGET_BUTTON:
 		if ([[gadget->handle cell] respondsToSelector:@selector(setBackgroundColor)]) [[gadget->handle cell] setBackgroundColor:color];
 		break;
+	case GADGET_COMBOBOX:
 	case GADGET_WINDOW:
 		[gadget->handle setBackgroundColor:color];
 		[gadget->handle display];

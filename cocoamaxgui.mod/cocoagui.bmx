@@ -69,6 +69,7 @@ Extern
 	Function NSUnlockText(gadget:TNSGadget)
 	Function NSSetTabs(gadget:TNSGadget,tabs)
 	Function NSSetColor(gadget:TNSGadget,r,g,b)
+	Function NSRemoveColor(gadget:TNSGadget)
 	Function NSSetAlpha(gadget:TNSGadget,alpha#)
 	Function NSSetTextColor(gadget:TNSGadget,r,g,b)
 	Function NSGetCursorPos(gadget:TNSGadget,units)
@@ -579,6 +580,10 @@ Type TNSGadget Extends TGadget
 
 	Method SetColor(r,g,b)
 		NSSetColor Self,r,g,b
+	End Method
+
+	Method RemoveColor()
+		NSRemoveColor Self
 	End Method
 
 	Method SetAlpha(alpha#)

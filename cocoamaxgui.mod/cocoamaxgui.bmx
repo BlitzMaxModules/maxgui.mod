@@ -19,6 +19,7 @@ ModuleInfo "License: BSD License"
 ModuleInfo "Copyright: Blitz Research Ltd."
 
 ModuleInfo "History: 1.54 Release"
+ModuleInfo "History: Added RemoveGadgetColor support"
 ModuleInfo "History: Removed use of NSPopoupButton for non editable ComboBoxes /topic=91200"
 ModuleInfo "History: Reduced ambiguous use of gadget.(arg)name$ /topic=91292"
 ModuleInfo "History: 1.53 Release"
