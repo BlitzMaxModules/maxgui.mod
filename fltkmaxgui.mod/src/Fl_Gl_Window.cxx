@@ -297,7 +297,7 @@ void Fl_Gl_Window::flush() {
     // SGI 320 messes up overlay with user-defined cursors:
     if (Fl_X::i(this)->cursor && Fl_X::i(this)->cursor != fl_default_cursor) {
       fixcursor = true; // make it restore cursor later
-      SetCursor(0);
+//      SetCursor(0);
     }
     fl_set_gl_context(this, (GLContext)overlay);
     if (fl_overlay_depth)
@@ -311,7 +311,7 @@ void Fl_Gl_Window::flush() {
     wglSwapLayerBuffers(Fl_X::i(this)->private_dc, WGL_SWAP_OVERLAY1);
     // if only the overlay was damaged we are done, leave main layer alone:
     if (damage() == FL_DAMAGE_OVERLAY) {
-      if (fixcursor) SetCursor(Fl_X::i(this)->cursor);
+//      if (fixcursor) SetCursor(Fl_X::i(this)->cursor);
       return;
     }
   }
@@ -402,7 +402,7 @@ void Fl_Gl_Window::flush() {
   }
 
 #if HAVE_GL_OVERLAY && defined(WIN32)
-  if (fixcursor) SetCursor(Fl_X::i(this)->cursor);
+//  if (fixcursor) SetCursor(Fl_X::i(this)->cursor);
 #endif
   valid(1);
   context_valid(1);

@@ -138,6 +138,7 @@ void flSetAlign(Fl_Widget*widget,int aligntype);
 int flAlign(Fl_Widget*widget);
 
 void flSetColor(Fl_Widget*widget,int r,int g,int b);
+void flRemoveColor(Fl_Widget*widget);
 void flSetFocus(Fl_Widget*widget);
 void *flGetFocus();
 void flSetWhen(Fl_Widget*,Fl_When);
@@ -512,6 +513,7 @@ public:
 		updateImage();
 		redraw();
 	}
+	
 	void setcolor(Fl_Color c)
 	{
 		if(!hascolor){
@@ -1153,6 +1155,11 @@ void flSetAlign(Fl_Widget*widget,int aligntype)
 int flAlign(Fl_Widget*widget)
 {
 	return widget->align();
+}
+
+void flRemoveColor(Fl_Widget*widget){
+	int	rr,gg,bb;
+	widget->color(FL_BACKGROUND_COLOR);
 }
 
 void flSetColor(Fl_Widget*widget,int r,int g,int b)

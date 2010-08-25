@@ -36,6 +36,7 @@ Function flUserData(widget)
 Function flDelete(pointer:Byte Ptr)
 
 Function flSetColor(widget,r,g,b)
+Function flRemoveColor(widget)
 Function flSetLabel(widget,name$z)
 Function flSetLabelColor(widget,r,g,b)
 Function flSetLabelFont(widget,font)

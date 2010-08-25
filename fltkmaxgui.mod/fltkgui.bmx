@@ -393,6 +393,10 @@ Type TFLWidget Extends TGadget
 	Method SetColor( r,g,b )
 		flSetColor(WidgetHandle(),r,g,b)
 	End Method
+
+	Method RemoveColor()
+		flRemoveColor(WidgetHandle())
+	End Method
 	
 	Method SetTextColor( r,g,b )
 		flSetLabelColor(WidgetHandle(),r,g,b)
@@ -972,7 +976,7 @@ Type TFLWindow Extends TFLGadget
 				If size RethinkWindow()
 				If move PostGuiEvent(EVENT_WINDOWMOVE,Self,0,0,ax,ay)
 				If size PostGuiEvent(EVENT_WINDOWSIZE,Self,0,0,aw,ah)
-		End Select
+			End Select
 	EndMethod
 
 	Method CreateWindowClient()

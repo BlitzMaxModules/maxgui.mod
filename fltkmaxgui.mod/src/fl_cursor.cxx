@@ -120,7 +120,7 @@ void Fl_Window::cursor(Fl_Cursor c, Fl_Color c1, Fl_Color c2) {
     }
     i->cursor = LoadCursor(NULL, n);
   }
-  SetCursor(i->cursor);
+//  SetCursor(i->cursor);
 }
 
 #elif defined(__APPLE__)

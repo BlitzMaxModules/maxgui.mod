@@ -101,8 +101,8 @@
 	 * Use the new Xft library to draw anti-aliased text.
 	 */
 	
-	#define USE_XFT 1
-	//#undef USE_XFT
+	//#define USE_XFT 1
+	#undef USE_XFT
 	
 	/*
 	 * HAVE_XDBE:
@@ -110,7 +110,10 @@
 	 * Do we have the X double-buffer extension?
 	 */
 	
-	#define HAVE_XDBE 1
+	// seb: Disabled to remedy occasional black flickering on resize.
+	// skid: TODO: fix clipping of windowclient and reenable
+	
+	#define HAVE_XDBE 0
 	
 	/*
 	 * USE_XDBE:
@@ -118,8 +121,7 @@
 	 * Actually try to use the double-buffer extension?
 	 */
 	
-	// seb: Disabled to remedy occasional black flickering on resize.
-	#define USE_XDBE 0  //HAVE_XDBE
+	#define USE_XDBE HAVE_XDBE
 	
 	/*
 	 * USE_QUARTZ:
