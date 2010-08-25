@@ -900,8 +900,12 @@ about: The @{r}ed, @{g}reen and @{b}lue components should be in the range 0 to 2
 This command is not supported for all Gadget types on all platforms.
 See Also: #SetGadgetTextColor() #SetGadgetAlpha #RemoveGadgetColor
 EndRem
-Function SetGadgetColor( gadget:TGadget,r,g,b )
-	gadget.SetColor r,g,b
+Function SetGadgetColor( gadget:TGadget,r,g,b,bg=True )
+	If bg
+		gadget.SetColor r,g,b
+	Else
+		gadget.SetTextColor( r,g,b )
+	EndIf
 End Function
 
 Rem
