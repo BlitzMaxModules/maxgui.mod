@@ -665,6 +665,8 @@ Type TGadget
 	End Method
 	Method SetColor(r,g,b)
 	End Method
+	Method RemoveColor()
+	End Method
 	Method SetAlpha(a#)
 	End Method
 	Method SetTextColor(r,g,b)
@@ -861,6 +863,9 @@ Type TProxyGadget Extends TGadget
 	End Method
 	Method SetColor(r,g,b)
 		Return proxy.SetColor(r,g,b)
+	End Method
+	Method RemoveColor()
+		Return proxy.RemoveColor()
 	End Method
 	Method SetAlpha(a#)
 		Return proxy.SetAlpha(a)

@@ -761,20 +761,6 @@ Function RedrawGadget( gadget:TGadget )
 End Function
 
 Rem
-bbdoc: Set a gadget's background color.
-about:
-By passing #False as the value for the @bg parameter, the function call has exactly
-the same effect as calling the dedicated #SetGadgetTextColor command.
-EndRem
-Function SetGadgetColor( gadget:TGadget,r,g,b,bg=True )
-	If bg
-		gadget.SetColor r,g,b
-	Else
-		gadget.SetTextColor r,g,b
-	EndIf
-End Function
-
-Rem
 bbdoc: Set a gadget's pixmap.
 about: This is a more generic form of old backwards-compatible #SetPanelPixmap function which now allows icons
 to be set for other gadgets as well as just backgrounds for panels.
@@ -902,10 +888,31 @@ End Function
 Rem
 bbdoc: Set a gadget's foreground color.
 about: The @{r}ed, @{g}reen and @{b}lue components should be in the range 0 to 255.
+See Also: #SetGadgetColor()
 EndRem
 Function SetGadgetTextColor( gadget:TGadget,r,g,b )
 	gadget.SetTextColor( r,g,b )
 End Function
+
+Rem
+bbdoc: Set a gadget's background color.
+about: The @{r}ed, @{g}reen and @{b}lue components should be in the range 0 to 255.
+This command is not supported for all Gadget types on all platforms.
+See Also: #SetGadgetTextColor() #SetGadgetAlpha #RemoveGadgetColor
+EndRem
+Function SetGadgetColor( gadget:TGadget,r,g,b )
+	gadget.SetColor r,g,b
+End Function
+
+Rem
+bbdoc: Removes a gadget's background color.
+about: Restores a gadget to it's default color.
+See Also: #SetGadgetColor()
+EndRem
+Function RemoveGadgetColor( gadget:TGadget )
+	gadget.RemoveColor
+End Function
+
 
 Rem
 bbdoc: Set the hot-key combination for a gadget.

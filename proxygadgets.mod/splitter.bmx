@@ -265,7 +265,7 @@ Type TSplitter Extends TProxyGadget
 	EndMethod
 	
 	Method SetColor%( pRed%, pGreen%, pBlue%)
-		Return SetGadgetColor( pnlSplitHandle, pRed, pGreen, pBlue, True )
+		Return SetPanelColor( pnlSplitHandle, pRed, pGreen, pBlue )
 	EndMethod
 	
 	Method SetSensitivity%(pSensitivity%)
