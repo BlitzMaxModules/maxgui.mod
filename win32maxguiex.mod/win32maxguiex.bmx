@@ -9,6 +9,7 @@ ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Armstrong Communications Ltd."
 
 ModuleInfo "History: 0.74 Release"
+ModuleInfo "History: Moved xpmanifest.o to it's own module MaxGUI.XPManifest"
 ModuleInfo "History: Added RemoveColor interface"
 ModuleInfo "History: Modified licence"
 ModuleInfo "History: Removed composite mode bit banging in window resizing states /topic=91447"
@@ -291,9 +292,7 @@ Strict
 Import MaxGUI.MaxGUI
 Import "winimports.bmx"
 
-Import "xpmanifest.o"
-
-'Let's begin!
+' Import "xpmanifest.o"
 
 maxgui_driver = New TWindowsGUIDriver
 
