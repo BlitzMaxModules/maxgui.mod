@@ -2444,6 +2444,7 @@ void NSInitGadget(nsgadget *gadget){
 		[combobox setCompletes:YES];
 		[combobox setDelegate:GlobalApp];		
 		[combobox setEditable:(style&COMBOBOX_EDITABLE)?YES:NO];			
+		[combobox setSelectable:YES];			
 		if (view) [view addSubview:combobox];		
 		gadget->handle=combobox;
 		gadget->view=combobox;
@@ -3104,6 +3105,7 @@ void NSActivate(nsgadget *gadget,int code){
 	TextView	*textview;
 	NSTextField *textfield;
 	NSText *text;
+	NSComboBox *combo;
 
 // generic commands
 
@@ -3204,7 +3206,17 @@ void NSActivate(nsgadget *gadget,int code){
 			[treeview collapseNode:node];
 			break;
 		}
-		break;		
+		break;
+				
+	case GADGET_COMBOBOX:
+		switch (code){
+		case ACTIVATE_FOCUS:
+			combo=(NSComboBox*)gadget->handle;
+			[combo selectText:nil];
+			break;	
+		}
+		break;
+
 	case GADGET_HTMLVIEW:
 		browser=(HTMLView*)gadget->handle;
 		switch(code){
@@ -3222,6 +3234,7 @@ void NSActivate(nsgadget *gadget,int code){
 			if (view != nil) [view print:view];
 			break;
 		}
+						
 	default:
 		switch (code){
 		case ACTIVATE_FOCUS:
