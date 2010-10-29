@@ -148,6 +148,7 @@ void NSSetSelection(nsgadget *gadget,int pos,int length,int units);
 @class ImageString;
 @class TableView;
 @class ToolView;
+@class Scroller;
 
 @interface CocoaApp:NSObject{
 	NSMutableDictionary	*toolbaritems;
@@ -180,6 +181,17 @@ void NSSetSelection(nsgadget *gadget,int pos,int length,int units);
 void ScheduleEventDispatch(){
 	[CocoaApp performSelector:@selector(dispatchGuiEvents) withObject:nil afterDelay:0.0];
 }
+
+@interface Scroller:NSScroller{
+}
+-(id)init;
+//-(id)initWithFrame:(NSRect)rect;
+//-(void)drawParts;
+//-(void)drawKnob;
+//-(void)drawKnobSlotInRect:(NSRect)slotRect highlight:(BOOL)flag;
+//-(void)drawArrow:(NSScrollerArrow)arrow highlight:(BOOL)flag;
+//-(void)highlight:(BOOL)flag;
+@end
 
 @interface FlippedView:NSView{
 }
@@ -694,6 +706,21 @@ static CocoaApp *GlobalApp;
 	[menuitems removeObject:item];
 }
 
+@end
+
+// Scroller
+
+@implementation Scroller
+-(id)init{
+	[super init];
+	[self setAlphaValue:.5f];		
+	return self;
+}
+//-(void)drawKnob{}
+//-(void)drawParts{}
+//-(void)drawKnobSlotInRect:(NSRect)slotRect highlight:(BOOL)flag{}
+//-(void)drawArrow:(NSScrollerArrow)arrow highlight:(BOOL)flag{}
+//-(void)highlight:(BOOL)flag{}
 @end
 
 // FlippedView
@@ -1419,10 +1446,18 @@ tableColumn:(NSTableColumn *)aTableColumn row:(int)row mouseLocation:(NSPoint)mo
 -(id)initWithFrame:(NSRect)rect{
 	
 	scroll=[[NSScrollView alloc] initWithFrame:rect];
-	[scroll setBorderType:NSNoBorder];
+
+//	[scroll setVerticalScroller:[[Scroller alloc] init]];
+//	[scroll setHorizontalScroller:[[Scroller alloc] init]];
+
 	[scroll setHasVerticalScroller:YES];
 	[scroll setHasHorizontalScroller:YES];
+
+	[scroll setDrawsBackground:NO];
+	[scroll setRulersVisible:NO];
+	[scroll setBorderType:NSNoBorder];
 	[scroll setAutohidesScrollers:YES];
+				
 	NSSize contentSize = [scroll contentSize];	
 
 	self=[super initWithFrame:NSMakeRect(0, 0,contentSize.width,contentSize.height)];
@@ -1437,6 +1472,7 @@ tableColumn:(NSTableColumn *)aTableColumn row:(int)row mouseLocation:(NSPoint)mo
 	[self setUsesRuler:NO];
 
 	[scroll setDocumentView:self];
+
 	style=[[NSParagraphStyle defaultParagraphStyle] mutableCopy];
 	[style setLineBreakMode:NSLineBreakByClipping];
 	
@@ -1537,8 +1573,11 @@ tableColumn:(NSTableColumn *)aTableColumn row:(int)row mouseLocation:(NSPoint)mo
 	if(color){
 		[self setBackgroundColor:color];	
 		[self setDrawsBackground:true];
+		[scroll setBackgroundColor:color];
+		[scroll setDrawsBackground:true];
 	}else{
 		[self setDrawsBackground:false];
+		[scroll setDrawsBackground:false];
 	}
 }
 -(void)setFont:(NSFont*)font{
