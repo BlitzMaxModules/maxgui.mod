@@ -162,6 +162,7 @@ void NSSetSelection(nsgadget *gadget,int pos,int length,int units);
 -(void)windowDidMove:(NSNotification *)aNotification;
 -(BOOL)windowShouldZoom:(NSWindow *)sender toFrame:(NSRect)newFrame;
 -(void)windowDidBecomeKey:(NSNotification *)aNotification;
+-(void)menuItemDidChange:(id)sender;
 -(void)menuSelect:(id)sender;
 -(void)iconSelect:(id)sender;
 -(void)sliderSelect:(id)sender;
@@ -588,7 +589,10 @@ static CocoaApp *GlobalApp;
 	NSObject *o = [n object];
 	[CocoaApp performSelector:@selector(delayedGadgetAction:) withObject:o afterDelay:0.0];
 }
-
+-(void)menuItemDidChange:(id)sender{
+	NSMenuItem *m = (NSMenuItem*)sender;
+	[CocoaApp performSelector:@selector(delayedGadgetAction:) withObject:[m representedObject] afterDelay:0.0];
+}
 -(id)init{
 	toolbaritems=[[NSMutableDictionary dictionaryWithCapacity:10] retain];
 	menuitems=[[NSMutableArray arrayWithCapacity:10] retain];
@@ -3708,15 +3712,17 @@ void NSAddItem(nsgadget *gadget,int index,BBString *data,BBString *tip,NSImage *
 			[combo insertItemWithObjectValue:text atIndex:index];
 
 		} else {
-			menuItem = [[NSMenuItem alloc] initWithTitle:text action:NULL keyEquivalent:@""];
+			
+			menuItem = [[NSMenuItem alloc] initWithTitle:text action: @selector(menuItemDidChange:) keyEquivalent:@""];
+			
+			[menuItem setRepresentedObject:combo];
+			[menuItem setTarget:GlobalApp];
 			[menuItem setImage:image];
 			[[combo menu] insertItem:menuItem atIndex:index];
 			[menuItem release];
 			
-
 			/*
-			[combo insertItemWithTitle:text atIndex:index]; 
-
+			[combo insertItemWithTitle:text atIndex:index];
 			[[combo itemAtIndex:index] setImage:image];
 			*/
 
@@ -3781,11 +3787,14 @@ void NSSetItem(nsgadget *gadget,int index,BBString *data,BBString *tip,NSImage *
 			[combo insertItemWithObjectValue:text atIndex:index];
 
 		} else {
-			menuItem = [[NSMenuItem alloc] initWithTitle:text action:NULL keyEquivalent:@""];
+			
+			menuItem = [[NSMenuItem alloc] initWithTitle:text action: @selector(menuItemDidChange:) keyEquivalent:@""];
+			
+			[menuItem setRepresentedObject:combo];
+			[menuItem setTarget:GlobalApp];
 			[menuItem setImage:image];
 			[[combo menu] insertItem:menuItem atIndex:index];
 			[menuItem release];
-			
 
 			/*
 			[combo insertItemWithTitle:text atIndex:index]; 
