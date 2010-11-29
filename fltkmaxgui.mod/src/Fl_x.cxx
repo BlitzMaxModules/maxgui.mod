@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_x.cxx 7642 2010-06-15 08:20:15Z AlbrechtS $"
+// "$Id: Fl_x.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // X specific code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -54,7 +54,7 @@
 static Fl_Xlib_Graphics_Driver fl_xlib_driver;
 static Fl_Display_Device fl_xlib_display(&fl_xlib_driver);
 FL_EXPORT Fl_Display_Device *fl_display_device = (Fl_Display_Device*)&fl_xlib_display; // does not change
-FL_EXPORT Fl_Graphics_Driver *fl_device = (Fl_Graphics_Driver*)&fl_xlib_driver; // the current target device of graphics operations
+FL_EXPORT Fl_Graphics_Driver *fl_graphics_driver = (Fl_Graphics_Driver*)&fl_xlib_driver; // the current target device of graphics operations
 FL_EXPORT Fl_Surface_Device *fl_surface = (Fl_Surface_Device*)fl_display_device; // the current target surface of graphics operations
 
 ////////////////////////////////////////////////////////////////
@@ -310,6 +310,14 @@ Atom fl_XdndURIList;
 Atom fl_XaUtf8String;
 Atom fl_XaTextUriList;
 
+/*
+  X defines 32-bit-entities to have a format value of max. 32,
+  although sizeof(atom) can be 8 (64 bits) on a 64-bit OS.
+  See also fl_open_display() for sizeof(atom) < 4.
+  Used for XChangeProperty (see STR #2419).
+*/
+static int atom_bits = 32;
+
 static void fd_callback(int,void *) {
   do_queued_events();
 }
@@ -350,19 +358,19 @@ void fl_new_ic()
 #if USE_XFT
 
 #if defined(__GNUC__)
-#warning XFT support here
+// FIXME: warning XFT support here
 #endif /*__GNUC__*/
 
   if (!fs) {
     fnt = NULL;//fl_get_font_xfld(0, 14);
-    if (!fnt) {fnt = "-misc-fixed-*";must_free_fnt=false;}
+    if (!fnt) {fnt = (char*)"-misc-fixed-*";must_free_fnt=false;}
     fs = XCreateFontSet(fl_display, fnt, &missing_list,
                         &missing_count, &def_string);
   }
 #else
   if (!fs) {
     fnt = fl_get_font_xfld(0, 14);
-    if (!fnt) {fnt = "-misc-fixed-*";must_free_fnt=false;}
+    if (!fnt) {fnt = (char*)"-misc-fixed-*";must_free_fnt=false;}
     fs = XCreateFontSet(fl_display, fnt, &missing_list,
                         &missing_count, &def_string);
   }
@@ -465,16 +473,16 @@ void fl_set_spot(int font, int size, int X, int Y, int W, int H, Fl_Window *win)
 #if USE_XFT
 
 #if defined(__GNUC__)
-#warning XFT support here
+// FIXME: warning XFT support here
 #endif /*__GNUC__*/
 
     fnt = NULL; // fl_get_font_xfld(font, size);
-    if (!fnt) {fnt = "-misc-fixed-*";must_free_fnt=false;}
+    if (!fnt) {fnt = (char*)"-misc-fixed-*";must_free_fnt=false;}
     fs = XCreateFontSet(fl_display, fnt, &missing_list,
                         &missing_count, &def_string);
 #else
     fnt = fl_get_font_xfld(font, size);
-    if (!fnt) {fnt = "-misc-fixed-*";must_free_fnt=false;}
+    if (!fnt) {fnt = (char*)"-misc-fixed-*";must_free_fnt=false;}
     fs = XCreateFontSet(fl_display, fnt, &missing_list,
                         &missing_count, &def_string);
 #endif
@@ -583,6 +591,9 @@ void fl_open_display(Display* d) {
   fl_XdndURIList        = XInternAtom(d, "text/uri-list",       0);
   fl_XaUtf8String       = XInternAtom(d, "UTF8_STRING",         0);
   fl_XaTextUriList      = XInternAtom(d, "text/uri-list",       0);
+  
+  if (sizeof(Atom) < 4)
+    atom_bits = sizeof(Atom) * 8;
 
   Fl::add_fd(ConnectionNumber(d), POLLIN, fd_callback);
 
@@ -793,36 +804,32 @@ static Fl_Window* resize_bug_fix;
 static char unknown[] = "<unknown>";
 const int unknown_len = 10;
 
-/* Seb was here - avoid ReparentNotify crash which seems to appear
- * if Maximus is running on Ubuntu dists. */
-
 extern "C" {
-	
-	int _xerror = 0;
-	
-	static int _ignorexevents( Display *display, XErrorEvent *event ){
-		_xerror = 1;
-		return 0;
-	}
-	
-	inline static XErrorHandler CatchXException() {
-		_xerror = 0;
-		return _ignorexevents;
-	}
-	
-	inline static int WasXExceptionRaised() {
-		return _xerror;
-	}
+
+static int xerror = 0;
+
+static int ignoreXEvents(Display *display, XErrorEvent *event) {
+  xerror = 1;
+  return 0;
+}
+
+static XErrorHandler catchXExceptions() {
+  xerror = 0;
+  return ignoreXEvents;
+}
+
+static int wasXExceptionRaised() {
+  return xerror;
+}
 
 }
-	
+
 
 int fl_handle(const XEvent& thisevent)
 {
   XEvent xevent = thisevent;
   fl_xevent = &thisevent;
   Window xid = xevent.xany.window;
-  int filtered = 0;
   static Window xim_win = 0;
 
   if (fl_xim_ic && xevent.type == DestroyNotify &&
@@ -881,10 +888,8 @@ int fl_handle(const XEvent& thisevent)
 #endif
   }
 
-  filtered = XFilterEvent((XEvent *)&xevent, 0);
-  if (filtered) {
-    return 1;
-  }
+  if ( XFilterEvent((XEvent *)&xevent, 0) )
+      return(1);
 
   switch (xevent.type) {
 
@@ -958,7 +963,7 @@ int fl_handle(const XEvent& thisevent)
     if (e.target == TARGETS) {
       Atom a = fl_XaUtf8String; //XA_STRING;
       XChangeProperty(fl_display, e.requestor, e.property,
-                      XA_ATOM, sizeof(Atom)*8, 0, (unsigned char*)&a, 1);
+                      XA_ATOM, atom_bits, 0, (unsigned char*)&a, 1);
     } else if (/*e.target == XA_STRING &&*/ fl_selection_length[clipboard]) {
       XChangeProperty(fl_display, e.requestor, e.property,
                       e.target, 8, 0,
@@ -1157,33 +1162,30 @@ int fl_handle(const XEvent& thisevent)
       int len = 0;
 
       if (fl_xim_ic) {
-        if (!filtered) {
-          Status status;
-          len = XUtf8LookupString(fl_xim_ic, (XKeyPressedEvent *)&xevent.xkey,
-                               buffer, buffer_len, &keysym, &status);
+	Status status;
+	len = XUtf8LookupString(fl_xim_ic, (XKeyPressedEvent *)&xevent.xkey,
+			     buffer, buffer_len, &keysym, &status);
 
-          while (status == XBufferOverflow && buffer_len < 50000) {
-            buffer_len = buffer_len * 5 + 1;
-            buffer = (char*)realloc(buffer, buffer_len);
-            len = XUtf8LookupString(fl_xim_ic, (XKeyPressedEvent *)&xevent.xkey,
-                               buffer, buffer_len, &keysym, &status);
-          }
-        } else {
+	while (status == XBufferOverflow && buffer_len < 50000) {
+	  buffer_len = buffer_len * 5 + 1;
+	  buffer = (char*)realloc(buffer, buffer_len);
+	  len = XUtf8LookupString(fl_xim_ic, (XKeyPressedEvent *)&xevent.xkey,
+			     buffer, buffer_len, &keysym, &status);
+	}
+	keysym = XKeycodeToKeysym(fl_display, keycode, 0);
+      } else {
+        //static XComposeStatus compose;
+        len = XLookupString((XKeyEvent*)&(xevent.xkey),
+                             buffer, buffer_len, &keysym, 0/*&compose*/);
+        if (keysym && keysym < 0x400) { // a character in latin-1,2,3,4 sets
+          // force it to type a character (not sure if this ever is needed):
+          // if (!len) {buffer[0] = char(keysym); len = 1;}
+          len = fl_utf8encode(XKeysymToUcs(keysym), buffer);
+          if (len < 1) len = 1;
+          // ignore all effects of shift on the keysyms, which makes it a lot
+          // easier to program shortcuts and is Windoze-compatable:
           keysym = XKeycodeToKeysym(fl_display, keycode, 0);
         }
-      } else {
-      //static XComposeStatus compose;
-      len = XLookupString((XKeyEvent*)&(xevent.xkey),
-                             buffer, buffer_len, &keysym, 0/*&compose*/);
-      if (keysym && keysym < 0x400) { // a character in latin-1,2,3,4 sets
-        // force it to type a character (not sure if this ever is needed):
-        // if (!len) {buffer[0] = char(keysym); len = 1;}
-        len = fl_utf8encode(XKeysymToUcs(keysym), buffer);
-        if (len < 1) len = 1;
-        // ignore all effects of shift on the keysyms, which makes it a lot
-        // easier to program shortcuts and is Windoze-compatable:
-        keysym = XKeycodeToKeysym(fl_display, keycode, 0);
-      }
       }
       // MRS: Can't use Fl::event_state(FL_CTRL) since the state is not
       //      set until set_event_xy() is called later...
@@ -1278,6 +1280,10 @@ int fl_handle(const XEvent& thisevent)
       Fl::e_original_keysym = (int)keysym;
     }
     Fl::e_keysym = int(keysym);
+  
+    // replace XK_ISO_Left_Tab (Shift-TAB) with FL_Tab (modifier flags are set correctly by X11)
+    if (Fl::e_keysym == 0xfe20) Fl::e_keysym = FL_Tab;
+    
     set_event_xy();
     Fl::e_is_click = 0;
     break;}
@@ -1375,23 +1381,22 @@ int fl_handle(const XEvent& thisevent)
     int xpos, ypos;
     Window junk;
     
-    XErrorHandler oldhandler = XSetErrorHandler( CatchXException() );
-    
+    // on some systems, the ReparentNotify event is not handled as we would expect.
+    XErrorHandler oldHandler = XSetErrorHandler(catchXExceptions());
+
     //ReparentNotify gives the new position of the window relative to
     //the new parent. FLTK cares about the position on the root window.
     XTranslateCoordinates(fl_display, xevent.xreparent.parent,
                           XRootWindow(fl_display, fl_screen),
                           xevent.xreparent.x, xevent.xreparent.y,
                           &xpos, &ypos, &junk);
-    
-    XSetErrorHandler( oldhandler );
-    
-    if( !WasXExceptionRaised() ){
-        // tell Fl_Window about it and set flag to prevent echoing:
-        resize_bug_fix = window;
-        window->position(xpos, ypos);
+    XSetErrorHandler(oldHandler);
+
+    // tell Fl_Window about it and set flag to prevent echoing:
+    if ( !wasXExceptionRaised() ) {
+      resize_bug_fix = window;
+      window->position(xpos, ypos);
     }
-    
     break;
     }
   }
@@ -1404,13 +1409,14 @@ int fl_handle(const XEvent& thisevent)
 void Fl_Window::resize(int X,int Y,int W,int H) {
   int is_a_move = (X != x() || Y != y());
   int is_a_resize = (W != w() || H != h());
+  int is_a_enlarge = (W > w() || H > h());
   int resize_from_program = (this != resize_bug_fix);
   if (!resize_from_program) resize_bug_fix = 0;
   if (is_a_move && resize_from_program) set_flag(FORCE_POSITION);
   else if (!is_a_resize && !is_a_move) return;
   if (is_a_resize) {
     Fl_Group::resize(X,Y,W,H);
-    if (shown()) {redraw(); i->wait_for_expose = 1;}
+    if (shown()) {redraw(); if(is_a_enlarge) i->wait_for_expose = 1;}
   } else {
     x(X); y(Y);
   }
@@ -1756,7 +1762,7 @@ void Fl_Window::label(const char *name,const char *iname) {
 // contents are restored to the area, but this assumes the area
 // is cleared to background color.  So this is disabled in this version.
 // Fl_Window *fl_boxcheat;
-static inline int can_boxcheat(uchar b) {return (b==1 || (b&2) && b<=15);}
+static inline int can_boxcheat(uchar b) {return (b==1 || ((b&2) && b<=15));}
 
 void Fl_Window::show() {
   image(Fl::scheme_bg_);
@@ -1860,5 +1866,5 @@ void preparePrintFront(void)
 #endif
 
 //
-// End of "$Id: Fl_x.cxx 7642 2010-06-15 08:20:15Z AlbrechtS $".
+// End of "$Id: Fl_x.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

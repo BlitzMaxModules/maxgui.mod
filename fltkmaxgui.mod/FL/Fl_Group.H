@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Group.H 7280 2010-03-16 22:51:31Z matt $"
+// "$Id: Fl_Group.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Group header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -106,6 +106,7 @@ public:
     widget if \p before is not in the group.
   */
   void insert(Fl_Widget& o, Fl_Widget* before) {insert(o,find(before));}
+  void remove(int index);
   void remove(Fl_Widget&);
   /**
     Removes the widget \p o from the group.
@@ -230,5 +231,5 @@ public:
 #endif
 
 //
-// End of "$Id: Fl_Group.H 7280 2010-03-16 22:51:31Z matt $".
+// End of "$Id: Fl_Group.H 7903 2010-11-28 21:06:39Z matt $".
 //

@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Tree_Prefs.H 6956 2009-12-08 08:06:44Z greg.ercolano $"
+// "$Id: Fl_Tree_Prefs.H 7903 2010-11-28 21:06:39Z matt $"
 //
 
 #ifndef FL_TREE_PREFS_H
@@ -10,7 +10,7 @@
 //////////////////////
 //
 // Fl_Tree -- This file is part of the Fl_Tree widget for FLTK
-// Copyright (C) 2009 by Greg Ercolano.
+// Copyright (C) 2009-2010 by Greg Ercolano.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -69,8 +69,8 @@ enum Fl_Tree_Connector {
 ///
 enum Fl_Tree_Select {
   FL_TREE_SELECT_NONE=0,	///< Nothing selected when items are clicked
-  FL_TREE_SELECT_SINGLE,	///< Single item selected when item is clicked (default)
-  FL_TREE_SELECT_MULTI	///< Multiple items can be selected by clicking with
+  FL_TREE_SELECT_SINGLE=1,	///< Single item selected when item is clicked (default)
+  FL_TREE_SELECT_MULTI=2	///< Multiple items can be selected by clicking with
   ///< SHIFT or CTRL or mouse drags.
 };
 
@@ -82,7 +82,7 @@ enum Fl_Tree_Select {
 /// You should probably be using the methods in Fl_Tree
 /// instead of trying to accessing tree's preferences settings directly.
 ///
-class Fl_Tree_Prefs {
+class FL_EXPORT Fl_Tree_Prefs {
   int _labelfont;			// label's font face
   int _labelsize;			// label's font size
   int _margintop;			// -- 
@@ -357,5 +357,5 @@ public:
 #endif /*FL_TREE_PREFS_H*/
 
 //
-// End of "$Id: Fl_Tree_Prefs.H 6956 2009-12-08 08:06:44Z greg.ercolano $".
+// End of "$Id: Fl_Tree_Prefs.H 7903 2010-11-28 21:06:39Z matt $".
 //

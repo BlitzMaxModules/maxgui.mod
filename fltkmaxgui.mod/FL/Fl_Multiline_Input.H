@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Multiline_Input.H 6889 2009-09-19 22:09:00Z greg.ercolano $"
+// "$Id: Fl_Multiline_Input.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Multiline input header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -38,15 +38,14 @@
   This input field displays '\n' characters as new lines rather than ^J,
   and accepts the Return, Tab, and up and down arrow keys.  This is for
   editing multiline text.
-  <P>
+
   This is far from the nirvana of text editors, and is probably only
   good for small bits of text, 10 lines at most. Note that this widget
   does not support scrollbars or per-character color control.
-  <P>
+
   If you are presenting large amounts of text and need scrollbars
   or full color control of characters, you probably want Fl_Text_Editor
   instead.
-  <P>
 */
 class Fl_Multiline_Input : public Fl_Input {
 public:
@@ -62,5 +61,5 @@ public:
 #endif
 
 //
-// End of "$Id: Fl_Multiline_Input.H 6889 2009-09-19 22:09:00Z greg.ercolano $".
+// End of "$Id: Fl_Multiline_Input.H 7903 2010-11-28 21:06:39Z matt $".
 //

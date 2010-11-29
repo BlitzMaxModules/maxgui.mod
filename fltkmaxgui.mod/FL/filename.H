@@ -1,9 +1,9 @@
 /*
- * "$Id: filename.H 7504 2010-04-14 20:17:44Z matt $"
+ * "$Id: filename.H 7903 2010-11-28 21:06:39Z matt $"
  *
  * Filename header file for the Fast Light Tool Kit (FLTK).
  *
- * Copyright 1998-2009 by Bill Spitzak and others.
+ * Copyright 1998-2010 by Bill Spitzak and others.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -25,8 +25,9 @@
  *     http://www.fltk.org/str.php
  */
 
-// Xcode on OS X includes files by recursing down into directories.
-// This code catches the cycle and directly includes the required file.
+/* Xcode on OS X includes files by recursing down into directories.
+ * This code catches the cycle and directly includes the required file.
+ */
 #ifdef fl_dirent_h_cyclic_include 
 #  include "/usr/include/dirent.h"
 #endif
@@ -172,5 +173,5 @@ int _fl_filename_isdir_quick(const char *name);
 /** @} */
 
 /*
- * End of "$Id: filename.H 7504 2010-04-14 20:17:44Z matt $".
+ * End of "$Id: filename.H 7903 2010-11-28 21:06:39Z matt $".
  */

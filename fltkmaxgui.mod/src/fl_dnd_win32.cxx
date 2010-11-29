@@ -1,5 +1,5 @@
 //
-// "$Id: fl_dnd_win32.cxx 7563 2010-04-28 03:15:47Z greg.ercolano $"
+// "$Id: fl_dnd_win32.cxx 7817 2010-11-11 11:15:18Z AlbrechtS $"
 //
 // Drag & Drop code for the Fast Light Tool Kit (FLTK).
 //
@@ -53,9 +53,6 @@ extern char *fl_locale2utf8(const char *s, UINT codepage = 0);
 extern unsigned int fl_codepage;
 
 Fl_Window *fl_dnd_target_window = 0;
-
-// All of the following code requires GCC 3.x or a non-GNU compiler...
-#if !defined(__GNUC__) || __GNUC__ >= 3
 
 #include <ole2.h>
 #include <shellapi.h>
@@ -378,7 +375,7 @@ public:
     n = 0;
   }
 
-  ~FLEnum(void) {
+  virtual ~FLEnum(void) {
     n = 0;
   }
 };
@@ -519,15 +516,7 @@ int Fl::dnd()
   if ( ret==DRAGDROP_S_DROP ) return 1; // or DD_S_CANCEL
   return 0;
 }
-#else
-int Fl::dnd()
-{
-  // Always indicate DnD failed when using GCC < 3...
-  return 1;
-}
-#endif // !__GNUC__ || __GNUC__ >= 3
-
 
 //
-// End of "$Id: fl_dnd_win32.cxx 7563 2010-04-28 03:15:47Z greg.ercolano $".
+// End of "$Id: fl_dnd_win32.cxx 7817 2010-11-11 11:15:18Z AlbrechtS $".
 //

@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Printer.cxx 7617 2010-05-27 17:20:18Z manolo $"
+// "$Id: Fl_Printer.cxx 7894 2010-11-26 10:22:40Z manolo $"
 //
 // Encompasses platform-specific printing-support code and 
 // PostScript output code for the Fast Light Tool Kit (FLTK).
@@ -78,7 +78,8 @@ const char *Fl_Printer::property_cancel = "Cancel";
 
 const char *Fl_Printer::device_type = "Fl_Printer";
 
-void Fl_Printer::set_current()
+#if defined(__APPLE__) || defined(WIN32)
+void Fl_System_Printer::set_current(void)
 {
 #ifdef __APPLE__
   fl_gc = (CGContextRef)gc;
@@ -87,7 +88,8 @@ void Fl_Printer::set_current()
 #endif
   this->Fl_Surface_Device::set_current();
 }
+#endif
 
 //
-// End of "$Id: Fl_Printer.cxx 7617 2010-05-27 17:20:18Z manolo $".
+// End of "$Id: Fl_Printer.cxx 7894 2010-11-26 10:22:40Z manolo $".
 //

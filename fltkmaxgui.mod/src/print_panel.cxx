@@ -1,5 +1,5 @@
 //
-// "$Id: print_panel.cxx 7480 2010-04-11 18:42:35Z AlbrechtS $"
+// "$Id: print_panel.cxx 7885 2010-11-23 12:13:17Z manolo $"
 //
 // Print panel for the Fast Light Tool Kit (FLTK).
 //
@@ -67,7 +67,6 @@ static Fl_Int_Input *print_to=(Fl_Int_Input *)0;
 static Fl_Spinner *print_copies=(Fl_Spinner *)0;
 
 static int print_start = 0;	// 1 if print_okay has been clicked
-static int print_pipe = 0;	// 0 = file, 1 = pipe (lp)
 
 static void cb_print_choice(Fl_Choice*, void*) {
   print_update_status();
@@ -574,7 +573,7 @@ void print_update_status() {
   if (print_choice->value()) {
     snprintf(command, sizeof(command), "lpstat -p '%s'", printer);
     if ((lpstat = popen(command, "r")) != NULL) {
-      fgets(status, sizeof(status), lpstat);
+      if (fgets(status, sizeof(status), lpstat)==0) { /* ignore */ }
       pclose(lpstat);
     } else strcpy(status, "printer status unavailable");
   } else status[0] = '\0';
@@ -594,5 +593,5 @@ void print_update_status() {
 }
 
 //
-// End of "$Id: print_panel.cxx 7480 2010-04-11 18:42:35Z AlbrechtS $".
+// End of "$Id: print_panel.cxx 7885 2010-11-23 12:13:17Z manolo $".
 //

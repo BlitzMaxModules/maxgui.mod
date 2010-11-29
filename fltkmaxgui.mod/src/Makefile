@@ -1,9 +1,9 @@
 #
-# "$Id: Makefile 7618 2010-05-27 17:24:21Z manolo $"
+# "$Id: Makefile 7906 2010-11-28 21:28:30Z matt $"
 #
 # Library makefile for the Fast Light Tool Kit (FLTK).
 #
-# Copyright 1998-2009 by Bill Spitzak and others.
+# Copyright 1998-2010 by Bill Spitzak and others.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Library General Public
@@ -797,5 +797,5 @@ uninstall:
 	fi
 
 #
-# End of "$Id: Makefile 7618 2010-05-27 17:24:21Z manolo $".
+# End of "$Id: Makefile 7906 2010-11-28 21:28:30Z matt $".
 #

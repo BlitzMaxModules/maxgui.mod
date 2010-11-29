@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Preferences.H 7415 2010-04-03 13:03:43Z manolo $"
+// "$Id: Fl_Preferences.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Preferences .
 //
-// Copyright 2002-2009 by Matthias Melcher.
+// Copyright 2002-2010 by Matthias Melcher.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -99,7 +99,7 @@ public:
   Fl_Preferences( Fl_Preferences *parent, int groupIndex );
   Fl_Preferences(const Fl_Preferences&);
   Fl_Preferences( ID id );
-  ~Fl_Preferences();
+  virtual ~Fl_Preferences();
   
   /** Return an ID that can later be reused to open more references to this dataset.
    */
@@ -156,8 +156,6 @@ public:
   // char export( const char *filename, Type fileFormat );
   // char import( const char *filename );
   
-  char copyTo(class Fl_Tree*);
-
   /**
      'Name' provides a simple method to create numerical or more complex 
      procedural names for entries and groups on the fly.
@@ -227,7 +225,6 @@ private:
   public:
     Node( const char *path );
     ~Node();
-    char copyTo(class Fl_Tree*, class Fl_Tree_Item*);
     // node methods
     int write( FILE *f );
     const char *name();
@@ -284,5 +281,5 @@ protected:
 #endif // !Fl_Preferences_H
 
 //
-// End of "$Id: Fl_Preferences.H 7415 2010-04-03 13:03:43Z manolo $".
+// End of "$Id: Fl_Preferences.H 7903 2010-11-28 21:06:39Z matt $".
 //

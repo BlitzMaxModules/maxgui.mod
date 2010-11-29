@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Gl_Device_Plugin.cxx 7613 2010-05-21 07:15:13Z manolo $"
+// "$Id: Fl_Gl_Device_Plugin.cxx 7715 2010-10-11 18:10:32Z greg.ercolano $"
 //
 // implementation of class Fl_Gl_Device_Plugin for the Fast Light Tool Kit (FLTK).
 //
@@ -25,6 +25,7 @@
 //     http://www.fltk.org/str.php
 //
 
+#include <config.h>
 #include <FL/Fl_Printer.H>
 #include <FL/Fl_Gl_Window.H>
 #include "Fl_Gl_Choice.H"
@@ -148,5 +149,5 @@ static Fl_Gl_Device_Plugin Gl_Device_Plugin;
 FL_EXPORT int fl_gl_load_plugin = 0;
 
 //
-// End of "$Id: Fl_Gl_Device_Plugin.cxx 7613 2010-05-21 07:15:13Z manolo $".
+// End of "$Id: Fl_Gl_Device_Plugin.cxx 7715 2010-10-11 18:10:32Z greg.ercolano $".
 //

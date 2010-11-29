@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Native_File_Chooser_MAC.H 7354 2010-03-29 11:07:29Z matt $"
+// "$Id: Fl_Native_File_Chooser_MAC.H 7788 2010-10-31 20:47:50Z matt $"
 //
 // FLTK native OS file chooser widget
 //
@@ -30,7 +30,6 @@
 
 // OSX-SPECIFIC NATIVE BROWSER
 #include <Carbon/Carbon.h>
-#include <config.h>
 
 #undef check // necessary for use of Fl::check()
 
@@ -51,7 +50,7 @@ public:
     NO_OPTIONS     = 0x0000,		// no options enabled
     SAVEAS_CONFIRM = 0x0001,		// Show native 'Save As' overwrite confirm dialog (if supported)
     NEW_FOLDER     = 0x0002,		// Show 'New Folder' icon (if supported)
-    PREVIEW        = 0x0004,		// enable preview mode
+    PREVIEW        = 0x0004 		// enable preview mode
   };
 private:
   int             _btype;		// kind-of browser to show()
@@ -118,5 +117,5 @@ public:
 #endif /*!FL_DOXYGEN*/
 
 //
-// End of "$Id: Fl_Native_File_Chooser_MAC.H 7354 2010-03-29 11:07:29Z matt $".
+// End of "$Id: Fl_Native_File_Chooser_MAC.H 7788 2010-10-31 20:47:50Z matt $".
 //

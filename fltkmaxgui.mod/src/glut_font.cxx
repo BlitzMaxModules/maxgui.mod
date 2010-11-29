@@ -1,9 +1,9 @@
 //
-// "$Id: glut_font.cxx 7147 2010-02-25 23:29:42Z matt $"
+// "$Id: glut_font.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // GLUT font routines for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -194,5 +194,5 @@ GLfloat glutStrokeHeight(void* fontID) {
 #endif // HAVE_GL
 
 //
-// End of "$Id: glut_font.cxx 7147 2010-02-25 23:29:42Z matt $".
+// End of "$Id: glut_font.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

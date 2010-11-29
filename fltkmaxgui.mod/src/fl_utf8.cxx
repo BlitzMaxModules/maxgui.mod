@@ -1,10 +1,10 @@
 //
-// "$Id: fl_utf8.cxx 6943 2009-11-18 12:43:21Z AlbrechtS $"
+// "$Id: fl_utf8.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Unicode to UTF-8 conversion functions.
 //
 // Author: Jean-Marc Lienher ( http://oksid.ch )
-// Copyright 2000-2009 by O'ksi'D.
+// Copyright 2000-2010 by O'ksi'D.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -60,7 +60,7 @@ extern "C" {
 extern "C" {
   int XUtf8Tolower(int ucs);
   unsigned short XUtf8IsNonSpacing(unsigned int ucs);
-};
+}
 
 #else // X-windows platform
 
@@ -823,5 +823,5 @@ void fl_make_path_for_file( const char *path )
 /** @} */
 
 //
-// End of "$Id: fl_utf8.cxx 6943 2009-11-18 12:43:21Z AlbrechtS $".
+// End of "$Id: fl_utf8.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

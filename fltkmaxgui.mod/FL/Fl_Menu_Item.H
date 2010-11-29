@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Menu_Item.H 7517 2010-04-16 17:55:45Z greg.ercolano $"
+// "$Id: Fl_Menu_Item.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Menu item header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -349,7 +349,7 @@ struct FL_EXPORT Fl_Menu_Item {
     const Fl_Menu_Item* title = 0,
     int menubar=0) const;
   const Fl_Menu_Item* test_shortcut() const;
-  const Fl_Menu_Item* find_shortcut(int *ip=0) const;
+  const Fl_Menu_Item* find_shortcut(int *ip=0, const bool require_alt = false) const;
 
   /**
     Calls the Fl_Menu_Item item's callback, and provides the 
@@ -415,5 +415,5 @@ enum {	// back-compatibility enum:
 #endif
 
 //
-// End of "$Id: Fl_Menu_Item.H 7517 2010-04-16 17:55:45Z greg.ercolano $".
+// End of "$Id: Fl_Menu_Item.H 7903 2010-11-28 21:06:39Z matt $".
 //

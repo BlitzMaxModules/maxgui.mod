@@ -1,9 +1,9 @@
 //
-// "$Id: fl_images_core.cxx 7505 2010-04-14 20:47:34Z manolo $"
+// "$Id: fl_images_core.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // FLTK images library core.
 //
-// Copyright 1997-2009 by Easy Software Products.
+// Copyright 1997-2010 by Easy Software Products.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -102,5 +102,5 @@ fl_check_images(const char *name,		// I - Filename
 
 
 //
-// End of "$Id: fl_images_core.cxx 7505 2010-04-14 20:47:34Z manolo $".
+// End of "$Id: fl_images_core.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Bitmap.cxx 7634 2010-06-07 13:39:03Z manolo $"
+// "$Id: Fl_Bitmap.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Bitmap drawing routines for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -249,7 +249,7 @@ Fl_Bitmask fl_create_alphamask(int w, int h, int d, int ld, const uchar *array) 
 }
 
 void Fl_Bitmap::draw(int XP, int YP, int WP, int HP, int cx, int cy) {
-  fl_device->draw(this, XP, YP, WP, HP, cx, cy);
+  fl_graphics_driver->draw(this, XP, YP, WP, HP, cx, cy);
 }
 
 static int start(Fl_Bitmap *bm, int XP, int YP, int WP, int HP, int w, int h, int &cx, int &cy, 
@@ -310,7 +310,7 @@ void Fl_GDI_Graphics_Driver::draw(Fl_Bitmap *bm, int XP, int YP, int WP, int HP,
       hMod = LoadLibrary("MSIMG32.DLL");
       if (hMod) fl_TransparentBlt = (fl_transp_func)GetProcAddress(hMod, "TransparentBlt");
     }
-    if (hMod) use_print_algo = true;
+    if (fl_TransparentBlt) use_print_algo = true;
   }
   if (use_print_algo) { // algorithm for bitmap output to Fl_GDI_Printer
     Fl_Offscreen tmp_id = fl_create_offscreen(W, H);
@@ -478,5 +478,5 @@ Fl_Image *Fl_Bitmap::copy(int W, int H) {
 
 
 //
-// End of "$Id: Fl_Bitmap.cxx 7634 2010-06-07 13:39:03Z manolo $".
+// End of "$Id: Fl_Bitmap.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

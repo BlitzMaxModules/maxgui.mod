@@ -1,9 +1,9 @@
 //
-// "$Id: fl_draw_pixmap.cxx 7647 2010-06-17 22:08:09Z manolo $"
+// "$Id: fl_draw_pixmap.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Pixmap drawing code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -63,7 +63,7 @@ int fl_measure_pixmap(/*const*/ char* const* data, int &w, int &h) {
 int fl_measure_pixmap(const char * const *cdata, int &w, int &h) {
   int i = sscanf(cdata[0],"%d%d%d%d",&w,&h,&ncolors,&chars_per_pixel);
   if (i<4 || w<=0 || h<=0 ||
-      chars_per_pixel!=1 && chars_per_pixel!=2) return w=0;
+      (chars_per_pixel!=1 && chars_per_pixel!=2) ) return w=0;
   return 1;
 }
 
@@ -341,7 +341,7 @@ int fl_draw_pixmap(const char*const* cdata, int x, int y, Fl_Color bg) {
 #endif
   
 #ifdef  __APPLE_QUARTZ__
-  if (fl_device->type() == Fl_Quartz_Graphics_Driver::device_type ) {
+  if (fl_graphics_driver->type() == Fl_Quartz_Graphics_Driver::device_type ) {
     bool transparent = (transparent_index>=0);
     transparent = true;
     U32 *array = new U32[d.w * d.h], *q = array;
@@ -425,5 +425,5 @@ int fl_draw_pixmap(const char*const* cdata, int x, int y, Fl_Color bg) {
 }
 
 //
-// End of "$Id: fl_draw_pixmap.cxx 7647 2010-06-17 22:08:09Z manolo $".
+// End of "$Id: fl_draw_pixmap.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

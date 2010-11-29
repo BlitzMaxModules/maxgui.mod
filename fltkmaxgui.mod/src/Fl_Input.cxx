@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Input.cxx 6968 2009-12-13 14:44:30Z matt $"
+// "$Id: Fl_Input.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Input widget for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -123,12 +123,12 @@ int Fl_Input::handle_key() {
       // find the insert position
       int ip = position()<mark() ? position() : mark();
       // This is complex to allow "0xff12" hex to be typed:
-      if (!ip && (ascii == '+' || ascii == '-') 
+      if (   (!ip && (ascii == '+' || ascii == '-')) 
           || (ascii >= '0' && ascii <= '9') 
           || (ip==1 && index(0)=='0' && (ascii=='x' || ascii == 'X')) 
-          || (ip>1 && index(0)=='0' && (index(1)=='x'||index(1)=='X')
-              && (ascii>='A'&& ascii<='F' || ascii>='a'&& ascii<='f')) 
-          || input_type()==FL_FLOAT_INPUT && ascii && strchr(legal_fp_chars, ascii)) 
+          || (ip>1 && index(0)=='0' && (index(1)=='x'||index(1)=='X') 
+              && ((ascii>='A'&& ascii<='F') || (ascii>='a'&& ascii<='f'))) 
+          || (input_type()==FL_FLOAT_INPUT && ascii && strchr(legal_fp_chars, ascii))) 
       {
 	if (readonly()) fl_beep();
 	else replace(position(), mark(), &ascii, 1);
@@ -382,7 +382,8 @@ int Fl_Input::handle_key() {
     case ctrl('A'): // go to the beginning of the current line
       return shift_position(line_start(position())) + NORMAL_INPUT_MOVE;
     case ctrl('B'): // go one character backward
-      return shift_position(position()-1) + NORMAL_INPUT_MOVE;
+      i = shift_position(position()-1) + NORMAL_INPUT_MOVE;
+      return Fl::option(Fl::OPTION_ARROW_FOCUS) ? i : 1;
     case ctrl('C'): // copy
       return copy(1);
     case ctrl('D'): // cut the next character
@@ -396,7 +397,8 @@ int Fl_Input::handle_key() {
     case ctrl('E'): // go to the end of the line
       return shift_position(line_end(position())) + NORMAL_INPUT_MOVE;
     case ctrl('F'): // go to the next character
-      return shift_position(position()+1) + NORMAL_INPUT_MOVE;
+      i = shift_position(position()+1) + NORMAL_INPUT_MOVE;
+      return Fl::option(Fl::OPTION_ARROW_FOCUS) ? i : 1;
     case ctrl('H'): // cut the previous character
       if (readonly()) {
         fl_beep();
@@ -417,7 +419,10 @@ int Fl_Input::handle_key() {
       return copy_cuts();
     case ctrl('N'): // go down one line
       i = position();
-      if (line_end(i) >= size()) return NORMAL_INPUT_MOVE;
+      if (line_end(i) >= size()) {
+        if (input_type()==FL_MULTILINE_INPUT && !Fl::option(Fl::OPTION_ARROW_FOCUS)) return 1;
+        return NORMAL_INPUT_MOVE;
+      }
       while (repeat_num--) {  
         i = line_end(i);
         if (i >= size()) break;
@@ -427,7 +432,10 @@ int Fl_Input::handle_key() {
       return 1;
     case ctrl('P'): // go up one line
       i = position();
-      if (!line_start(i)) return NORMAL_INPUT_MOVE;
+      if (!line_start(i)) {
+        if (input_type()==FL_MULTILINE_INPUT && !Fl::option(Fl::OPTION_ARROW_FOCUS)) return 1;
+        return NORMAL_INPUT_MOVE;
+      }
       while(repeat_num--) {
         i = line_start(i);
         if (!i) break;
@@ -475,6 +483,7 @@ int Fl_Input::handle_key() {
       // insert a few selected control characters literally:
       if (input_type() != FL_FLOAT_INPUT && input_type() != FL_INT_INPUT)
         return replace(position(), mark(), &ascii, 1);
+      break;
   }
   
   return 0;
@@ -499,7 +508,6 @@ int Fl_Input::handle(int event) {
           up_down_position(line_start(size()));
           break;
         case FL_Tab:
-        case 0xfe20: // XK_ISO_Left_Tab
           position(size(),0);
           break;
         default:
@@ -521,23 +529,23 @@ int Fl_Input::handle(int event) {
           window()->cursor(FL_CURSOR_NONE);
         return handle_key();
       }
+      //NOTREACHED
       
     case FL_PUSH:
       if (Fl::dnd_text_ops()) {
         int oldpos = position(), oldmark = mark();
         Fl_Boxtype b = box();
-        Fl_Input_::handle_mouse(
-                                x()+Fl::box_dx(b), y()+Fl::box_dy(b),
+        Fl_Input_::handle_mouse(x()+Fl::box_dx(b), y()+Fl::box_dy(b),
                                 w()-Fl::box_dw(b), h()-Fl::box_dh(b), 0);
         newpos = position(); 
         position( oldpos, oldmark );
         if (Fl::focus()==this && !Fl::event_state(FL_SHIFT) && input_type()!=FL_SECRET_INPUT &&
-            (newpos >= mark() && newpos < position() ||
-             newpos >= position() && newpos < mark())) {
-              // user clicked in the selection, may be trying to drag
-              drag_start = newpos;
-              return 1;
-            }
+           ( (newpos >= mark() && newpos < position()) || 
+             (newpos >= position() && newpos < mark()) ) ) {
+          // user clicked in the selection, may be trying to drag
+          drag_start = newpos;
+          return 1;
+        }
         drag_start = -1;
       }
       
@@ -602,12 +610,11 @@ int Fl_Input::handle(int event) {
         return 0;
       }
 #endif
-    {
-      Fl_Boxtype b = box();
-      Fl_Input_::handle_mouse(
-                              x()+Fl::box_dx(b), y()+Fl::box_dy(b),
-                              w()-Fl::box_dw(b), h()-Fl::box_dh(b), 0);
-    }
+      {
+        Fl_Boxtype b = box();
+        Fl_Input_::handle_mouse(x()+Fl::box_dx(b), y()+Fl::box_dy(b),
+                                w()-Fl::box_dw(b), h()-Fl::box_dh(b), 0);
+      }
       return 1;
       
     case FL_DND_LEAVE:
@@ -636,7 +643,6 @@ int Fl_Input::handle(int event) {
        }
        return 1;
        */
-      
   }
   Fl_Boxtype b = box();
   return Fl_Input_::handletext(event,
@@ -653,5 +659,5 @@ Fl_Input::Fl_Input(int X, int Y, int W, int H, const char *l)
 }
 
 //
-// End of "$Id: Fl_Input.cxx 6968 2009-12-13 14:44:30Z matt $".
+// End of "$Id: Fl_Input.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

@@ -1,9 +1,9 @@
 //
-// "$Id: filename_absolute.cxx 6986 2010-01-01 18:30:49Z greg.ercolano $"
+// "$Id: filename_absolute.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Filename expansion routines for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -210,6 +210,7 @@ fl_filename_relative(char       *to,	// O - Relative filename
   if (isdirsep(*slash)) slash ++;
 
   // do the same for the current dir
+  if (isdirsep(*newslash)) newslash --;
   if (*newslash != '\0')
     while (!isdirsep(*newslash) && newslash > cwd) newslash --;
 
@@ -232,5 +233,5 @@ fl_filename_relative(char       *to,	// O - Relative filename
 
 
 //
-// End of "$Id: filename_absolute.cxx 6986 2010-01-01 18:30:49Z greg.ercolano $".
+// End of "$Id: filename_absolute.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

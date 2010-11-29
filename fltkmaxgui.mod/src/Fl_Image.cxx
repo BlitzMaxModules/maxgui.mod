@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Image.cxx 7649 2010-06-18 13:39:27Z manolo $"
+// "$Id: Fl_Image.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Image drawing code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -434,7 +434,7 @@ static void alpha_blend(Fl_RGB_Image *img, int X, int Y, int W, int H, int cx, i
 #endif // !WIN32 && !__APPLE_QUARTZ__
 
 void Fl_RGB_Image::draw(int XP, int YP, int WP, int HP, int cx, int cy) {
-  fl_device->draw(this, XP, YP, WP, HP, cx, cy);
+  fl_graphics_driver->draw(this, XP, YP, WP, HP, cx, cy);
 }
 
 static int start(Fl_RGB_Image *img, int XP, int YP, int WP, int HP, int w, int h, int &cx, int &cy, 
@@ -586,5 +586,5 @@ void Fl_RGB_Image::label(Fl_Menu_Item* m) {
 
 
 //
-// End of "$Id: Fl_Image.cxx 7649 2010-06-18 13:39:27Z manolo $".
+// End of "$Id: Fl_Image.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

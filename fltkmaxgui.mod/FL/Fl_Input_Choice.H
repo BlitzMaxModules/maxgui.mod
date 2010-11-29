@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Input_Choice.H 7115 2010-02-20 17:40:07Z AlbrechtS $"
+// "$Id: Fl_Input_Choice.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // An input/chooser widget.
 //            ______________  ____
@@ -7,7 +7,7 @@
 //           | input area   || \/ |
 //           |______________||____|
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 // Copyright 2004 by Greg Ercolano.
 //
 // This library is free software; you can redistribute it and/or
@@ -218,5 +218,5 @@ public:
 #endif // !Fl_Input_Choice_H
 
 //
-// End of "$Id: Fl_Input_Choice.H 7115 2010-02-20 17:40:07Z AlbrechtS $".
+// End of "$Id: Fl_Input_Choice.H 7903 2010-11-28 21:06:39Z matt $".
 //

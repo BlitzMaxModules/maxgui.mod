@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_GIF_Image.cxx 6616 2009-01-01 21:28:26Z matt $"
+// "$Id: Fl_GIF_Image.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Fl_GIF_Image routines.
 //
-// Copyright 1997-2009 by Bill Spitzak and others.
+// Copyright 1997-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -386,5 +386,5 @@ Fl_GIF_Image::Fl_GIF_Image(const char *infname) : Fl_Pixmap((char *const*)0) {
 
 
 //
-// End of "$Id: Fl_GIF_Image.cxx 6616 2009-01-01 21:28:26Z matt $".
+// End of "$Id: Fl_GIF_Image.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

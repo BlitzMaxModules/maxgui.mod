@@ -1,9 +1,9 @@
 //
-// "$Id: fl_ask.cxx 7370 2010-03-30 19:44:50Z AlbrechtS $"
+// "$Id: fl_ask.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Standard dialog functions for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -65,8 +65,13 @@ Fl_Fontsize fl_message_size_ = 14;
 
 static char avoidRecursion = 0;
 
-// sets the global return value (ret_val) and closes the window
-static void button_cb(Fl_Widget *bt, void *val) {
+// Sets the global return value (ret_val) and closes the window.
+// Note: this is used for the button callbacks and the window
+// callback (closing the window with the close button or menu).
+// The first argument (Fl_Widget *) can either be an Fl_Button*
+// pointer to one of the buttons or an Fl_Window* pointer to the
+// message window (message_form).
+static void button_cb(Fl_Widget *, void *val) {
   ret_val = (int)(long)val;
   message_form->hide();
 }
@@ -82,6 +87,7 @@ static Fl_Window *makeform() {
  Fl_Group::current(0);
  // create a new top level window
  Fl_Window *w = message_form = new Fl_Window(410,103,"");
+ message_form->callback(button_cb,(void *)0);
  // w->clear_border();
  // w->box(FL_UP_BOX);
  (message = new Fl_Box(60, 25, 340, 20))
@@ -486,5 +492,5 @@ const char *fl_password(const char *fmt, const char *defstr, ...) {
 /** @} */
 
 //
-// End of "$Id: fl_ask.cxx 7370 2010-03-30 19:44:50Z AlbrechtS $".
+// End of "$Id: fl_ask.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

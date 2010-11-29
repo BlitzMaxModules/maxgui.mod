@@ -1,9 +1,9 @@
 //
-// "$Id: Fl.H 7334 2010-03-25 14:37:46Z AlbrechtS $"
+// "$Id: Fl.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Main header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -106,13 +106,14 @@ typedef int (*Fl_Args_Handler)(int argc, char **argv, int &i);
 
 /** @} */ /* group callback_functions */
 
+
 /**
   The Fl is the FLTK global (static) containing
   state information and global methods for the current application.
 */
 class FL_EXPORT Fl {
   Fl() {}; // no constructor!
-
+  
 public: // should be private!
 #ifndef FL_DOXYGEN
   static int e_number;
@@ -143,7 +144,34 @@ public: // should be private!
     If true then flush() will do something.
   */
   static void damage(int d) {damage_ = d;}
-
+  
+public:
+  typedef enum {
+    /// If set, the arrow keys can change focus from a text widget to another 
+    /// widget. If clear, only Tab and BackTab can.
+    OPTION_ARROW_FOCUS = 0,
+    /// If set, calls to fl_file_chooser will open the native file chooser.
+    /// If clear, the FLTK file chooser will open instead.
+    /// \todo Fl::OPTION_NATIVE_FILECHOOSER not yet supported
+    OPTION_NATIVE_FILECHOOSER,
+    // don't change this, leave it always as the last element
+    OPTION_LAST
+  } Fl_Option;
+  
+private:  
+  static unsigned char options_[OPTION_LAST];
+  static unsigned char options_read_;
+  
+public:  
+  /**
+    Return a global setting for all FLTK applications, possibly overridden
+    by a setting specifically for this application.
+   
+    \param opt
+    \returns true or false
+   */
+  static bool option(Fl_Option opt);
+  
   /**
     The currently executing idle callback function: DO NOT USE THIS DIRECTLY!
     
@@ -176,9 +204,9 @@ public:
   static double version();
 
   // argument parsers:
-  static int arg(int, char**, int&);
-  static int args(int, char**, int&, Fl_Args_Handler ah = 0);
-  static void args(int, char**);
+  static int arg(int argc, char **argv, int& i);
+  static int args(int argc, char **argv, int& i, Fl_Args_Handler cb = 0);
+  static void args(int argc, char **argv);
   /**
     Usage string displayed if Fl::args() detects an invalid argument.
     This may be changed to point to customized text at run-time.
@@ -718,15 +746,15 @@ public:
     Sets an entry in the fl_color index table. You can set it to any
     8-bit RGB color. The color is not allocated until fl_color(i) is used.
   */
-  static void	set_color(Fl_Color, unsigned); // platform dependent
-  static Fl_Color get_color(Fl_Color);
-  static void	get_color(Fl_Color, uchar&, uchar&, uchar&);
+  static void	set_color(Fl_Color i, unsigned c); // platform dependent
+  static unsigned get_color(Fl_Color i);
+  static void	get_color(Fl_Color i, uchar &red, uchar &green, uchar &blue);
   /**
     Frees the specified color from the colormap, if applicable.
     If overlay is non-zero then the color is freed from the
     overlay colormap.
   */
-  static void	free_color(Fl_Color, int overlay = 0); // platform dependent
+  static void	free_color(Fl_Color i, int overlay = 0); // platform dependent
 
   // fonts:
   static const char* get_font(Fl_Font);
@@ -779,7 +807,9 @@ public:
 
   /**   @} */
  /** \defgroup  fl_drawings  Drawing functions
-	fl global graphics and gui drawing functions
+  FLTK global graphics and GUI drawing functions.
+  These functions are declared in <FL/fl_draw.H>, 
+  and in <FL/x.H> for offscreen buffer-related ones.
      @{ */
   // <Hack to re-order the 'Drawing functions' group>
  /** @} */
@@ -1083,5 +1113,5 @@ public:
 #endif // !Fl_H
 
 //
-// End of "$Id: Fl.H 7334 2010-03-25 14:37:46Z AlbrechtS $".
+// End of "$Id: Fl.H 7903 2010-11-28 21:06:39Z matt $".
 //

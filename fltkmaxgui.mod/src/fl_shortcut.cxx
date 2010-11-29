@@ -1,9 +1,9 @@
 //
-// "$Id: fl_shortcut.cxx 7496 2010-04-13 21:08:06Z greg.ercolano $"
+// "$Id: fl_shortcut.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Shortcut support routines for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -54,9 +54,11 @@
 /**
     Test the current event, which must be an FL_KEYBOARD or 
     FL_SHORTCUT, against a shortcut value (described in 
-    Fl_Button).  Returns non-zero if there is a match.  Not to
-    be confused with 
-    Fl_Widget::test_shortcut().
+    Fl_Button).
+    
+    Not to be confused with Fl_Widget::test_shortcut().
+    
+    \return non-zero if there is a match.
 */
 int Fl::test_shortcut(unsigned int shortcut) {
   if (!shortcut) return 0;
@@ -292,6 +294,18 @@ unsigned int fl_old_shortcut(const char* s) {
 
 // Tests for &x shortcuts in button labels:
 
+/** Returns the Unicode value of the '&x' shortcut in a given text.
+
+  The given text \p t (usually a widget's label or a menu text) is
+  searched for a '&x' shortcut label, and if found, the Unicode
+  value of the '&x' shortcut is returned.
+
+  \param t text or label to search for '&x' shortcut.
+
+  \return Unicode (UCS-4) value of shortcut in \p t or 0.
+
+  \note Internal use only.
+*/
 unsigned int Fl_Widget::label_shortcut(const char *t) {
   if (!t) return 0;
   for (;;) {
@@ -306,12 +320,29 @@ unsigned int Fl_Widget::label_shortcut(const char *t) {
   }
 }
 
-int Fl_Widget::test_shortcut(const char *t) {
-  #ifdef WIN32
-  // on MSWindows, users expect shortcuts to work only when the Alt modifier is pressed
-  if (Fl::event_state(FL_ALT)==0) return 0;
-  #endif
+/** Returns true if the given text \p t contains the entered '&x' shortcut.
+
+  This method must only be called in handle() methods or callbacks after
+  a keypress event (usually FL_KEYDOWN or FL_SHORTCUT). The given text
+  \p t (usually a widget's label or menu text) is searched for a '&x'
+  shortcut, and if found, this is compared with the entered key value.
+
+  Fl::event_text() is used to get the entered key value.
+  Fl::event_state() is used to get the Alt modifier, if \p require_alt
+  is true.
+
+  \param t text or label to search for '&x' shortcut.
+  \param require_alt if true: match only if Alt key is pressed.
+
+  \return true, if the entered text matches the '&x' shortcut in \p t
+	  false (0) otherwise.
+
+  \note Internal use only.
+*/
+int Fl_Widget::test_shortcut(const char *t, const bool require_alt) {
   if (!t) return 0;
+  // for menubars etc. shortcuts must work only if the Alt modifier is pressed
+  if (require_alt && Fl::event_state(FL_ALT)==0) return 0;
   unsigned int c = fl_utf8decode(Fl::event_text(), Fl::event_text()+Fl::event_length(), 0);
   if (!c) return 0;
   if (c == label_shortcut(t))
@@ -319,11 +350,26 @@ int Fl_Widget::test_shortcut(const char *t) {
   return 0;
 }
 
+/** Returns true if the widget's label contains the entered '&x' shortcut.
+
+  This method must only be called in handle() methods or callbacks after
+  a keypress event (usually FL_KEYDOWN or FL_SHORTCUT).
+  The widget's label is searched for a '&x'
+  shortcut, and if found, this is compared with the entered key value.
+
+  Fl::event_text() is used to get the entered key value.
+
+  \return true, if the entered text matches the widget's'&x' shortcut,
+	  false (0) otherwise.
+
+  \note Internal use only.
+*/
+
 int Fl_Widget::test_shortcut() {
   if (!(flags()&SHORTCUT_LABEL)) return 0;
   return test_shortcut(label());
 }
 
 //
-// End of "$Id: fl_shortcut.cxx 7496 2010-04-13 21:08:06Z greg.ercolano $".
+// End of "$Id: fl_shortcut.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Pixmap.cxx 7634 2010-06-07 13:39:03Z manolo $"
+// "$Id: Fl_Pixmap.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Pixmap drawing code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -75,7 +75,7 @@ void Fl_Pixmap::measure() {
 }
 
 void Fl_Pixmap::draw(int XP, int YP, int WP, int HP, int cx, int cy) {
-  fl_device->draw(this, XP, YP, WP, HP, cx, cy);
+  fl_graphics_driver->draw(this, XP, YP, WP, HP, cx, cy);
 }
 
 static int start(Fl_Pixmap *pxm, int XP, int YP, int WP, int HP, int w, int h, int &cx, int &cy, 
@@ -153,7 +153,7 @@ void Fl_GDI_Graphics_Driver::draw(Fl_Pixmap *pxm, int XP, int YP, int WP, int HP
       hMod = LoadLibrary("MSIMG32.DLL");
       if(hMod) fl_TransparentBlt = (fl_transp_func)GetProcAddress(hMod, "TransparentBlt");
     }
-    if (hMod) {
+    if (fl_TransparentBlt) {
       Fl_Offscreen tmp_id = fl_create_offscreen(pxm->w(), pxm->h());
       fl_begin_offscreen(tmp_id);
       uchar *bitmap = 0;
@@ -559,5 +559,5 @@ void Fl_Pixmap::desaturate() {
 }
 
 //
-// End of "$Id: Fl_Pixmap.cxx 7634 2010-06-07 13:39:03Z manolo $".
+// End of "$Id: Fl_Pixmap.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

@@ -2,7 +2,6 @@ include_regular_expression("[.][cxx|c|h]$")
 
 set(CPPFILES
   Fl.cxx
-  Fl_Abstract_Printer.cxx
   Fl_Adjuster.cxx
   Fl_Bitmap.cxx
   Fl_Browser.cxx
@@ -43,6 +42,7 @@ set(CPPFILES
   Fl_Native_File_Chooser.cxx
   Fl_Overlay_Window.cxx
   Fl_Pack.cxx
+  Fl_Paged_Device.cxx
   Fl_Pixmap.cxx
   Fl_Positioner.cxx
   Fl_Printer.cxx
@@ -229,9 +229,9 @@ if(HAVE_CAIRO)
    target_link_libraries(fltk fltk_cairo ${PKG_CAIRO_LIBRARIES})
 ENDif(HAVE_CAIRO)
 
-if(USE_XINERAMA)
+if(HAVE_XINERAMA)
    target_link_libraries(fltk ${X11_Xinerama_LIB})
-endif(USE_XINERAMA)
+endif(HAVE_XINERAMA)
 
 if(USE_XFT)
    target_link_libraries(fltk ${X11_Xft_LIB})
@@ -343,9 +343,9 @@ if(HAVE_CAIRO)
    target_link_libraries(fltk_SHARED fltk_cairo ${PKG_CAIRO_LIBRARIES})
 ENDif(HAVE_CAIRO)
 
-if(USE_XINERAMA)
+if(HAVE_XINERAMA)
    target_link_libraries(fltk_SHARED ${X11_Xinerama_LIB})
-endif(USE_XINERAMA)
+endif(HAVE_XINERAMA)
 
 if(USE_XFT)
    target_link_libraries(fltk_SHARED ${X11_Xft_LIB})

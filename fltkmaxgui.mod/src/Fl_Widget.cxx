@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Widget.cxx 7321 2010-03-23 17:37:51Z AlbrechtS $"
+// "$Id: Fl_Widget.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Base widget class for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -340,5 +340,5 @@ Fl_Widget::do_callback(Fl_Widget* o,void* arg) {
 }
 
 //
-// End of "$Id: Fl_Widget.cxx 7321 2010-03-23 17:37:51Z AlbrechtS $".
+// End of "$Id: Fl_Widget.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

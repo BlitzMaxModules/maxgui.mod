@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Device.H 7652 2010-06-21 15:49:45Z manolo $"
+// "$Id: Fl_Device.H 7719 2010-10-12 09:25:37Z manolo $"
 //
 // Definition of classes Fl_Device, Fl_Graphics_Driver, Fl_Surface_Device, Fl_Display_Device
 // for the Fast Light Tool Kit (FLTK).
@@ -49,11 +49,11 @@ class Fl_Graphics_Driver;
 class Fl_Display_Device;
 class Fl_Surface_Device;
 /** \brief Points to the driver that currently receives all graphics requests */
-extern Fl_Graphics_Driver *fl_device;
+FL_EXPORT extern Fl_Graphics_Driver *fl_graphics_driver;
 /** \brief Points to the surface that currently receives all graphics requests */
-extern Fl_Surface_Device *fl_surface;
+FL_EXPORT extern Fl_Surface_Device *fl_surface;
 /** \brief Points to the platform's display */
-extern Fl_Display_Device *fl_display_device;
+FL_EXPORT extern Fl_Display_Device *fl_display_device;
 
 /**
  signature of image generation callback function.
@@ -94,15 +94,8 @@ public:
  *
  The protected virtual methods of this class are those that a graphics driver should implement to
  support all of FLTK drawing functions.
- <br> The preferred FLTK API for drawing operations is the function collection of the 
- \ref fl_drawings and \ref fl_attributes modules. 
- <br> Alternatively, methods of the Fl_Graphics_Driver class can be called
- using the global variable Fl_Graphics_Driver * \ref fl_device that points at all time to the single driver 
- (an instance of an Fl_Graphics_Driver subclass) that's currently receiving graphics requests:
- \code fl_device->rect(x, y, w, h); \endcode
- <br>Each protected method of the Fl_Graphics_Driver class has the same effect as the
- function of the \ref fl_drawings and \ref fl_attributes modules which bears the same name
- prefixed with fl_ and has the same parameter list.
+ <br> The public API for drawing operations is functionally presented in \ref drawing and as function lists
+ in the \ref fl_drawings and \ref fl_attributes modules. 
   */
 class Fl_Graphics_Driver : public Fl_Device {
 protected:
@@ -128,6 +121,9 @@ protected:
   friend void fl_line(int x, int y, int x1, int y1);
   friend void fl_line(int x, int y, int x1, int y1, int x2, int y2);
   friend void fl_draw(const char *str, int n, int x, int y);
+#ifdef __APPLE__
+  friend void fl_draw(const char *str, int n, float x, float y);
+#endif
   friend void fl_draw(int angle, const char *str, int n, int x, int y);
   friend void fl_rtl_draw(const char *str, int n, int x, int y);
   friend void fl_font(Fl_Font face, Fl_Fontsize size);
@@ -301,6 +297,7 @@ public:
  */
 class Fl_Quartz_Graphics_Driver : public Fl_Graphics_Driver {
 public:
+  /** \brief The constructor. */
   Fl_Quartz_Graphics_Driver() { type_ = device_type; };
   static const char *device_type;
   void draw(Fl_Pixmap *pxm, int XP, int YP, int WP, int HP, int cx, int cy);
@@ -316,6 +313,7 @@ public:
  */
 class Fl_GDI_Graphics_Driver : public Fl_Graphics_Driver {
 public:
+  /** \brief The constructor. */
   Fl_GDI_Graphics_Driver() { type_ = device_type; };
   static const char *device_type;
   void draw(Fl_Pixmap *pxm, int XP, int YP, int WP, int HP, int cx, int cy);
@@ -331,6 +329,7 @@ public:
  */
 class Fl_Xlib_Graphics_Driver : public Fl_Graphics_Driver {
 public:
+  /** \brief The constructor. */
   Fl_Xlib_Graphics_Driver() { type_ = device_type; };
   static const char *device_type;
   void draw(Fl_Pixmap *pxm, int XP, int YP, int WP, int HP, int cx, int cy);
@@ -378,5 +377,5 @@ public:
 #endif // Fl_Device_H
 
 //
-// End of "$Id: Fl_Device.H 7652 2010-06-21 15:49:45Z manolo $".
+// End of "$Id: Fl_Device.H 7719 2010-10-12 09:25:37Z manolo $".
 //

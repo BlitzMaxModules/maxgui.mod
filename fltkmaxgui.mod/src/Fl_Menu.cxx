@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Menu.cxx 7151 2010-02-26 13:28:36Z matt $"
+// "$Id: Fl_Menu.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Menu code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -660,7 +660,6 @@ int menuwindow::early_hide_handle(int e) {
   case FL_KEYBOARD:
     switch (Fl::event_key()) {
     case FL_BackSpace:
-    case 0xFE20: // backtab
     BACKTAB:
       if (!backward(pp.menu_number)) {pp.item_number = -1;backward(pp.menu_number);}
       return 1;
@@ -686,7 +685,7 @@ int menuwindow::early_hide_handle(int e) {
       }
       return 1;
     case FL_Right:
-      if (pp.menubar && (pp.menu_number<=0 || pp.menu_number==1 && pp.nummenus==2))
+      if (pp.menubar && (pp.menu_number<=0 || (pp.menu_number==1 && pp.nummenus==2)))
 	forward(0);
       else if (pp.menu_number < pp.nummenus-1) forward(pp.menu_number+1);
       return 1;
@@ -774,8 +773,9 @@ int menuwindow::early_hide_handle(int e) {
   case FL_RELEASE:
     // Mouse must either be held down/dragged some, or this must be
     // the second click (not the one that popped up the menu):
-    if (!Fl::event_is_click() || pp.state == PUSH_STATE ||
-	pp.menubar && pp.current_item && !pp.current_item->submenu() // button
+    if (   !Fl::event_is_click() 
+        || pp.state == PUSH_STATE 
+        || (pp.menubar && pp.current_item && !pp.current_item->submenu()) // button
 	) {
 #if 0 // makes the check/radio items leave the menu up
       const Fl_Menu_Item* m = pp.current_item;
@@ -956,44 +956,56 @@ const Fl_Menu_Item* Fl_Menu_Item::pulldown(
 }
 
 /**
-  This method is called by widgets that want to display menus.  The menu
-  stays up until the user picks an item or dismisses it.  The selected
-  item (or NULL if none) is returned. <I>This does not do the
-  callbacks or change the state of check or radio items.</I>
-  <P>X,Y is the position of the mouse cursor, relative to the
+  This method is called by widgets that want to display menus.
+
+  The menu stays up until the user picks an item or dismisses it.
+  The selected item (or NULL if none) is returned. <I>This does not
+  do the callbacks or change the state of check or radio items.</I>
+
+  X,Y is the position of the mouse cursor, relative to the
   window that got the most recent event (usually you can pass 
-  Fl::event_x() and Fl::event_y() unchanged here). </P>
-  <P>title is a character string title for the menu.  If
-  non-zero a small box appears above the menu with the title in it. </P>
-  <P>The menu is positioned so the cursor is centered over the item 
-  picked.  This will work even if picked is in a submenu.
-  If picked is zero or not in the menu item table the menu is
-  positioned with the cursor in the top-left corner. </P>
-  <P>button is a pointer to an 
-  Fl_Menu_ from which the color and boxtypes for the menu are
-  pulled.  If NULL then defaults are used.
+  Fl::event_x() and Fl::event_y() unchanged here).
+
+  \p title is a character string title for the menu.  If
+  non-zero a small box appears above the menu with the title in it.
+
+  The menu is positioned so the cursor is centered over the item 
+  picked.  This will work even if \p picked is in a submenu.
+  If \p picked is zero or not in the menu item table the menu is
+  positioned with the cursor in the top-left corner.
+
+  \p button is a pointer to an Fl_Menu_ from which the color and
+  boxtypes for the menu are pulled.  If NULL then defaults are used.
 */
 const Fl_Menu_Item* Fl_Menu_Item::popup(
   int X, int Y,
   const char* title,
   const Fl_Menu_Item* picked,
-  const Fl_Menu_* but
+  const Fl_Menu_* button
   ) const {
   static Fl_Menu_Item dummy; // static so it is all zeros
   dummy.text = title;
-  return pulldown(X, Y, 0, 0, picked, but, title ? &dummy : 0);
+  return pulldown(X, Y, 0, 0, picked, button, title ? &dummy : 0);
 }
 
 /**
   Search only the top level menu for a shortcut.  
-  Either &x in the label or the shortcut fields are used. 
+  Either &x in the label or the shortcut fields are used.
+
+  This tests the current event, which must be an FL_KEYBOARD or 
+  FL_SHORTCUT, against a shortcut value.
+
+  \param ip returns the index of the item, if \p ip is not NULL.
+  \param require_alt if true: match only if Alt key is pressed.
+
+  \return found Fl_Menu_Item or NULL
 */
-const Fl_Menu_Item* Fl_Menu_Item::find_shortcut(int* ip) const {
+const Fl_Menu_Item* Fl_Menu_Item::find_shortcut(int* ip, const bool require_alt) const {
   const Fl_Menu_Item* m = first();
   if (m) for (int ii = 0; m->text; m = m->next(), ii++) {
     if (m->activevisible()) {
       if (Fl::test_shortcut(m->shortcut_)
-	 || Fl_Widget::test_shortcut(m->text)) {
+	 || Fl_Widget::test_shortcut(m->text, require_alt)) {
 	if (ip) *ip=ii;
 	return m;
       }
@@ -1032,5 +1044,5 @@ const Fl_Menu_Item* Fl_Menu_Item::test_shortcut() const {
 }
 
 //
-// End of "$Id: Fl_Menu.cxx 7151 2010-02-26 13:28:36Z matt $".
+// End of "$Id: Fl_Menu.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

@@ -1,5 +1,5 @@
 //
-// "$Id: fl_read_image_mac.cxx 7650 2010-06-18 16:31:15Z manolo $"
+// "$Id: fl_read_image_mac.cxx 7670 2010-07-09 17:29:35Z manolo $"
 //
 // WIN32 image reading routines for the Fast Light Tool Kit (FLTK).
 //
@@ -49,13 +49,14 @@ fl_read_image(uchar *p,		// I - Pixel buffer or NULL to allocate
     int sh = CGBitmapContextGetHeight(src);
     rowBytes = CGBitmapContextGetBytesPerRow(src);
     delta = CGBitmapContextGetBitsPerPixel(src)/8;
-    if( (sw - x > w) || (sh - y > h) )  return NULL;
+    if( (sw - x < w) || (sh - y < h) )  return NULL;
     }
   else { // reading from current window
     Fl_Window *window = Fl_Window::current();
     while(window->window()) window = window->window();
     base = MACbitmapFromRectOfWindow(window,x,y,w,h,&delta);
     rowBytes = delta*w;
+    x = y = 0;
     }
   // Allocate the image data array as needed...
   int d = alpha ? 4 : 3;
@@ -65,8 +66,8 @@ fl_read_image(uchar *p,		// I - Pixel buffer or NULL to allocate
   // Copy the image from the off-screen buffer to the memory buffer.
   int           idx, idy;	// Current X & Y in image
   uchar *pdst, *psrc;
-  for (idy = 0, pdst = p; idy < h; idy ++) {
-    for (idx = 0, psrc = base + idy * rowBytes; idx < w; idx ++, psrc += delta, pdst += d) {
+  for (idy = y, pdst = p; idy < h + y; idy ++) {
+    for (idx = 0, psrc = base + idy * rowBytes + x * delta; idx < w; idx ++, psrc += delta, pdst += d) {
       pdst[0] = psrc[0];  // R
       pdst[1] = psrc[1];  // G
       pdst[2] = psrc[2];  // B
@@ -78,5 +79,5 @@ fl_read_image(uchar *p,		// I - Pixel buffer or NULL to allocate
 
 
 //
-// End of "$Id: fl_read_image_mac.cxx 7650 2010-06-18 16:31:15Z manolo $".
+// End of "$Id: fl_read_image_mac.cxx 7670 2010-07-09 17:29:35Z manolo $".
 //

@@ -1,5 +1,5 @@
 //
-// "$Id: fl_font_mac.cxx 7652 2010-06-21 15:49:45Z manolo $"
+// "$Id: fl_font_mac.cxx 7892 2010-11-25 18:21:21Z manolo $"
 //
 // MacOS font selection routines for the Fast Light Tool Kit (FLTK).
 //
@@ -34,7 +34,6 @@ extern unsigned fl_utf8toUtf16(const char* src, unsigned srclen, unsigned short*
 #define check_default_font() {if (!fl_fontsize) fl_font(0, 12);}
 
 static const CGAffineTransform font_mx = { 1, 0, 0, -1, 0, 0 };
-static SInt32 MACsystemVersion = 0;
 
 Fl_Font_Descriptor::Fl_Font_Descriptor(const char* name, Fl_Fontsize Size) {
   next = 0;
@@ -48,9 +47,8 @@ Fl_Font_Descriptor::Fl_Font_Descriptor(const char* name, Fl_Fontsize Size) {
   size = Size;
   minsize = maxsize = Size;
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-  if(MACsystemVersion == 0) Gestalt(gestaltSystemVersion, &MACsystemVersion);
-
-if(MACsystemVersion >= 0x1050) {//unfortunately, CTFontCreateWithName != NULL on 10.4 also!
+if(fl_mac_os_version == 0) fl_open_display();
+if(fl_mac_os_version >= 0x1050) {//unfortunately, CTFontCreateWithName != NULL on 10.4 also!
   CFStringRef str = CFStringCreateWithCString(NULL, name, kCFStringEncodingUTF8);
   fontref = CTFontCreateWithName(str, size, NULL);
   CGGlyph glyph[2];
@@ -129,8 +127,8 @@ else {
   float fa = -FixedToFloat(bAscent), fd = -FixedToFloat(bDescent);
   if (fa>0.0f && fd>0.0f) {
     //float f = Size/(fa+fd);
-    ascent = fa; //int(fa*f+0.5f);
-    descent = fd; //Size - ascent;
+    ascent = int(fa); //int(fa*f+0.5f);
+    descent = int(fd); //Size - ascent;
   }
   int w = FixedToInt(bAfter);
   if (w)
@@ -168,7 +166,7 @@ Fl_Font_Descriptor::~Fl_Font_Descriptor() {
   */
   if (this == fl_fontsize) fl_fontsize = 0;
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-  if(MACsystemVersion >= 0x1050)  CFRelease(fontref);
+  if(fl_mac_os_version >= 0x1050)  CFRelease(fontref);
 #else
 	/*  ATSUDisposeTextLayout(layout);
   ATSUDisposeStyle(style); */
@@ -271,7 +269,7 @@ double fl_width(const UniChar* txt, int n) {
       return 8*n; // user must select a font first!
   }
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-if(MACsystemVersion >= 0x1050) {
+if(fl_mac_os_version >= 0x1050) {
   CTFontRef fontref = fl_fontsize->fontref;
   CFStringRef str = CFStringCreateWithBytes(NULL, (const UInt8*)txt, n * sizeof(UniChar), kCFStringEncodingUTF16, false);
   CFAttributedStringRef astr = CFAttributedStringCreate(NULL, str, NULL);
@@ -335,12 +333,12 @@ void fl_text_extents(const UniChar* txt, int n, int &dx, int &dy, int &w, int &h
   if (!fl_fontsize) {
     check_default_font(); // avoid a crash!
     if (!fl_fontsize)
-      w = 8.0 * n; // user must select a font first!
-      h = 8.0;
+      w = int(8.0 * n); // user must select a font first!
+      h = int(8.0);
       return;
   }
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-if(MACsystemVersion >= 0x1050) {
+if(fl_mac_os_version >= 0x1050) {
   CTFontRef fontref = fl_fontsize->fontref;
   CFStringRef str16 = CFStringCreateWithBytes(NULL, (const UInt8*)txt, n *sizeof(UniChar), kCFStringEncodingUTF16, false);
   CFAttributedStringRef astr = CFAttributedStringCreate(NULL, str16, NULL);
@@ -407,6 +405,7 @@ void Fl_Graphics_Driver::draw(const char* str, int n, int x, int y) {
 }
 
 
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
 static CGColorRef flcolortocgcolor(Fl_Color i)
 {
   uchar r, g, b;
@@ -414,23 +413,25 @@ static CGColorRef flcolortocgcolor(Fl_Color i)
   CGFloat components[4] = {r/255.0f, g/255.0f, b/255.0f, 1.};
   static CGColorSpaceRef cspace = NULL;
   if(cspace == NULL) {
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
     cspace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-#else
-    cspace = CGColorSpaceCreateWithName(kCGColorSpaceUserRGB);
-#endif
     }
   return CGColorCreate(cspace, components);
 }
+#endif
+
 
 void fl_draw(const char *str, int n, float x, float y) {
   
+  if(fl_graphics_driver->type() != Fl_Quartz_Graphics_Driver::device_type) {
+    fl_graphics_driver->draw(str, n, (int)x, (int)y );
+    return;
+    }
   // avoid a crash if no font has been selected by user yet !
   check_default_font();
   // convert to UTF-16 first
   UniChar *uniStr = mac_Utf8_to_Utf16(str, n, &n);
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-  if(MACsystemVersion >= 0x1050) {
+  if(fl_mac_os_version >= 0x1050) {
     CFStringRef keys[2];
     CFTypeRef values[2];  
     CFStringRef str16 = CFStringCreateWithBytes(NULL, (const UInt8*)uniStr, n * sizeof(UniChar), kCFStringEncodingUTF16, false);
@@ -489,9 +490,9 @@ void Fl_Graphics_Driver::draw(int angle, const char *str, int n, int x, int y) {
 }
 
 void Fl_Graphics_Driver::rtl_draw(const char* c, int n, int x, int y) {
-  draw(c, n, x - fl_width(c, n), y);
+  draw(c, n, int(x - fl_width(c, n)), y);
 }
 
 //
-// End of "$Id: fl_font_mac.cxx 7652 2010-06-21 15:49:45Z manolo $".
+// End of "$Id: fl_font_mac.cxx 7892 2010-11-25 18:21:21Z manolo $".
 //

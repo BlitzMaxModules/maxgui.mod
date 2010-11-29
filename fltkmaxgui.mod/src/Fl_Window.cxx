@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Window.cxx 7357 2010-03-29 14:10:54Z matt $"
+// "$Id: Fl_Window.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Window widget class for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -39,6 +39,8 @@
 #ifdef __APPLE_QUARTZ__
 #include <FL/fl_draw.H>
 #endif
+
+char *Fl_Window::default_xclass_ = 0L;
 
 void Fl_Window::_Fl_Window() {
   type(FL_WINDOW);
@@ -178,7 +180,104 @@ Fl_Window *Fl_Window::current() {
   return current_;
 }
 
+/** Returns the default xclass.
+
+  \see Fl_Window::default_xclass(const char *)
+
+ */
+const char *Fl_Window::default_xclass()
+{
+  if (default_xclass_) {
+    return default_xclass_;
+  } else {
+    return "FLTK";
+  }
+}
+
+/** Sets the default window xclass.
+
+  The default xclass is used for all windows that don't have their
+  own xclass set before show() is called. You can change the default
+  xclass whenever you want, but this only affects windows that are
+  created (and shown) after this call.
+
+  The given string \p xc is copied. You can use a local variable or
+  free the string immediately after this call.
+
+  If you don't call this, the default xclass for all windows will be "FLTK".
+  You can reset the default xclass by specifying NULL for \p xc.
+
+  If you call Fl_Window::xclass(const char *) for any window, then
+  this also sets the default xclass, unless it has been set before.
+
+  \param[in] xc default xclass for all windows subsequently created
+
+  \see Fl_Window::xclass(const char *)
+*/
+void Fl_Window::default_xclass(const char *xc)
+{
+  if (default_xclass_) {
+    free(default_xclass_);
+    default_xclass_ = 0L;
+  }
+  if (xc) {
+    default_xclass_ = strdup(xc);
+  }
+}
+
+/** Sets the xclass for this window.
+
+  A string used to tell the system what type of window this is. Mostly
+  this identifies the picture to draw in the icon. This only works if
+  called \e before calling show().
+
+  <I>Under X</I>, this is turned into a XA_WM_CLASS pair by truncating at
+  the first non-alphanumeric character and capitalizing the first character,
+  and the second one if the first is 'x'.  Thus "foo" turns into "foo, Foo",
+  and "xprog.1" turns into "xprog, XProg".
+
+  <I>Under Microsoft Windows</I>, this string is used as the name of the
+  WNDCLASS structure, though it is not clear if this can have any
+  visible effect.
+
+  \since FLTK 1.3 the passed string is copied. You can use a local
+  variable or free the string immediately after this call. Note that
+  FLTK 1.1 stores the \e pointer without copying the string.
+
+  If the default xclass has not yet been set, this also sets the
+  default xclass for all windows created subsequently.
+
+  \see Fl_Window::default_xclass(const char *)
+*/
+void Fl_Window::xclass(const char *xc) 
+{
+  if (xclass_) {
+    free(xclass_);
+    xclass_ = 0L;
+  }
+  if (xc) {
+    xclass_ = strdup(xc);
+    if (!default_xclass_) {
+      default_xclass(xc);
+    }
+  }
+}
+
+/** Returns the xclass for this window, or a default.
+
+  \see Fl_Window::default_xclass(const char *)
+  \see Fl_Window::xclass(const char *)
+*/
+const char *Fl_Window::xclass() const
+{
+  if (xclass_) {
+    return xclass_;
+  } else {
+    return default_xclass();
+  }
+}
+
 
 //
-// End of "$Id: Fl_Window.cxx 7357 2010-03-29 14:10:54Z matt $".
+// End of "$Id: Fl_Window.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

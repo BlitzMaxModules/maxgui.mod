@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Input_.cxx 6955 2009-12-07 22:04:55Z matt $"
+// "$Id: Fl_Input_.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Common input widget routines for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -722,12 +722,12 @@ static void undobuffersize(int n) {
   <tt>when() & FL_WHEN_CHANGED</tt> and there is a change.
 
   Set \p b and \p e equal to not delete anything.
-  Set insert to \c NULL to not insert anything.
+  Set \p text to \c NULL to not insert anything.
 
-  \p ilen must be zero or strlen(insert), this
+  \p ilen can be zero or <tt>strlen(text)</tt>, which
   saves a tiny bit of time if you happen to already know the
   length of the insertion, or can be used to insert a portion of a
-  string or a string containing <tt>nul</tt>'s.
+  string.
   
   \p b and \p e are clamped to the
   <tt>0..size()</tt> range, so it is safe to pass any values.
@@ -844,7 +844,7 @@ int Fl_Input_::replace(int b, int e, const char* text, int ilen) {
 */
 int Fl_Input_::undo() {
   was_up_down = 0;
-  if (undowidget != this || !undocut && !undoinsert) return 0;
+  if ( undowidget != this || (!undocut && !undoinsert) ) return 0;
 
   int ilen = undocut;
   int xlen = undoinsert;
@@ -1254,5 +1254,5 @@ unsigned int Fl_Input_::index(int i) const
 }
 
 //
-// End of "$Id: Fl_Input_.cxx 6955 2009-12-07 22:04:55Z matt $".
+// End of "$Id: Fl_Input_.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

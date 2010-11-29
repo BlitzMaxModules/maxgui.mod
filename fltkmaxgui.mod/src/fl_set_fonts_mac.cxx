@@ -1,5 +1,5 @@
 //
-// "$Id: fl_set_fonts_mac.cxx 7351 2010-03-29 10:35:00Z matt $"
+// "$Id: fl_set_fonts_mac.cxx 7892 2010-11-25 18:21:21Z manolo $"
 //
 // MacOS font utilities for the Fast Light Tool Kit (FLTK).
 //
@@ -60,12 +60,11 @@ static int fl_free_font = FL_FREE_FONT;
 
 Fl_Font Fl::set_fonts(const char* xstarname) {
 #pragma unused ( xstarname )
-if (fl_free_font > FL_FREE_FONT) // if already called
-	return (Fl_Font)fl_free_font;
+if (fl_free_font > FL_FREE_FONT) return (Fl_Font)fl_free_font; // if already called
+
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-static SInt32 MACsystemVersion = 0;
-if(MACsystemVersion == 0) Gestalt(gestaltSystemVersion, &MACsystemVersion);
-if(MACsystemVersion >= 0x1050) {
+  if(fl_mac_os_version == 0) fl_open_display();
+if(fl_mac_os_version >= 0x1050) {
 //if(CTFontCreateWithFontDescriptor != NULL) {// CTFontCreateWithFontDescriptor != NULL on 10.4 also!
   int value[1] = {1};
   CFDictionaryRef dict = CFDictionaryCreate(NULL, 
@@ -131,7 +130,7 @@ else {
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
   }
 #endif
-  return 0; // FIXME: I do not understand the shuffeling of the above ifdef's and why they are here!
+  return 0;
 }
 
 static int array[128];
@@ -149,5 +148,5 @@ int Fl::get_font_sizes(Fl_Font fnum, int*& sizep) {
 }
 
 //
-// End of "$Id: fl_set_fonts_mac.cxx 7351 2010-03-29 10:35:00Z matt $".
+// End of "$Id: fl_set_fonts_mac.cxx 7892 2010-11-25 18:21:21Z manolo $".
 //

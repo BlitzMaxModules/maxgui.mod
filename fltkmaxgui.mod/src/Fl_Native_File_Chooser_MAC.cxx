@@ -1,4 +1,4 @@
-// "$Id: Fl_Native_File_Chooser_MAC.cxx 7354 2010-03-29 11:07:29Z matt $"
+// "$Id: Fl_Native_File_Chooser_MAC.cxx 7689 2010-08-25 17:01:56Z manolo $"
 //
 // FLTK native OS file chooser widget
 //
@@ -548,6 +548,7 @@ int Fl_Native_File_Chooser::post() {
     NSString *fname = nil;
     NSString *preset = nil;
     NSPopUpButton *popup = nil;
+    [(NSSavePanel*)_panel setAllowsOtherFileTypes:YES];
     if ( !(_options & SAVEAS_CONFIRM) ) {
       static FLsaveDelegate *saveDelegate = nil;
       if (saveDelegate == nil)saveDelegate = [[FLsaveDelegate alloc] init]; // not to be ever freed
@@ -579,5 +580,5 @@ int Fl_Native_File_Chooser::post() {
 #endif /*!FL_DOXYGEN*/
 
 //
-// End of "$Id: Fl_Native_File_Chooser_MAC.cxx 7354 2010-03-29 11:07:29Z matt $".
+// End of "$Id: Fl_Native_File_Chooser_MAC.cxx 7689 2010-08-25 17:01:56Z manolo $".
 //

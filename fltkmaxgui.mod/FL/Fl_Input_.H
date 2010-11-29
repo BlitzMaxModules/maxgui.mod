@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Input_.H 6902 2009-09-27 11:06:56Z matt $"
+// "$Id: Fl_Input_.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Input base class header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -151,7 +151,7 @@ class FL_EXPORT Fl_Input_ : public Fl_Widget {
   /** \internal Horizontal cursor position in pixels while movin up or down.  */
   static double up_down_pos;
 
-  /** \internal Flag to remeber last cursor move. */
+  /** \internal Flag to remember last cursor move. */
   static int was_up_down;
 
   /* Convert a given text segment into the text that will be rendered on screen. */
@@ -451,5 +451,5 @@ public:
 #endif 
 
 //
-// End of "$Id: Fl_Input_.H 6902 2009-09-27 11:06:56Z matt $".
+// End of "$Id: Fl_Input_.H 7903 2010-11-28 21:06:39Z matt $".
 //

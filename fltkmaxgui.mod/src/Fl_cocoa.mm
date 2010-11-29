@@ -3,7 +3,7 @@
 //
 // MacOS-Cocoa specific code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -120,7 +120,7 @@ static void cocoaMouseHandler(NSEvent *theEvent);
 static Fl_Quartz_Graphics_Driver fl_quartz_driver;
 static Fl_Display_Device fl_quartz_display(&fl_quartz_driver);
 FL_EXPORT Fl_Display_Device *fl_display_device = (Fl_Display_Device*)&fl_quartz_display; // does not change
-FL_EXPORT Fl_Graphics_Driver *fl_device = (Fl_Graphics_Driver*)&fl_quartz_driver; // the current target device of graphics operations
+FL_EXPORT Fl_Graphics_Driver *fl_graphics_driver = (Fl_Graphics_Driver*)&fl_quartz_driver; // the current target device of graphics operations
 FL_EXPORT Fl_Surface_Device *fl_surface = (Fl_Surface_Device*)fl_display_device; // the current target surface of graphics operations
 
 // public variables
@@ -130,19 +130,16 @@ void *fl_system_menu;                   // this is really a NSMenu*
 Fl_Sys_Menu_Bar *fl_sys_menu_bar = 0;
 void *fl_default_cursor;		// this is really a NSCursor*
 void *fl_capture = 0;			// (NSWindow*) we need this to compensate for a missing(?) mouse capture
-//ulong fl_event_time;                  // the last timestamp from an x event
 char fl_key_vector[32];                 // used by Fl::get_key()
 bool fl_show_iconic;                    // true if called from iconize() - shows the next created window in collapsed state
 int fl_disable_transient_for;           // secret method of removing TRANSIENT_FOR
-//const Fl_Window* fl_modal_for;        // parent of modal() window
 Window fl_window;
 Fl_Window *Fl_Window::current_;
-//EventRef fl_os_event;		// last (mouse) event
+int fl_mac_os_version = 0;		// the version number of the running Mac OS X (e.g., 0x1064 for 10.6.4)
 
 // forward declarations of variables in this file
 static int got_events = 0;
 static Fl_Window* resize_from_system;
-static SInt32 MACsystemVersion;
 
 #if CONSOLIDATE_MOTION
 static Fl_Window* send_motion;
@@ -184,7 +181,7 @@ static unsigned short macKeyLookUp[128] =
   0/*FL_Shift_L*/, 0/*FL_Caps_Lock*/, 0/*FL_Alt_L*/, 0/*FL_Control_L*/, 
   0/*FL_Shift_R*/, 0/*FL_Alt_R*/, 0/*FL_Control_R*/, 0,
   
-  0, FL_KP+'.', FL_Right, FL_KP+'*', 0, FL_KP+'+', FL_Left, FL_Delete,
+  0, FL_KP+'.', FL_Right, FL_KP+'*', 0, FL_KP+'+', FL_Left, FL_Num_Lock,
   FL_Down, 0, 0, FL_KP+'/', FL_KP_Enter, FL_Up, FL_KP+'-', 0,
   
   0, FL_KP+'=', FL_KP+'0', FL_KP+'1', FL_KP+'2', FL_KP+'3', FL_KP+'4', FL_KP+'5',
@@ -735,11 +732,11 @@ static void update_e_xy_and_e_xy_root(NSWindow *nsw)
 {
   NSPoint pt;
   pt = [nsw mouseLocationOutsideOfEventStream];
-  Fl::e_x = pt.x;
-  Fl::e_y = [[nsw contentView] frame].size.height - pt.y;
+  Fl::e_x = int(pt.x);
+  Fl::e_y = int([[nsw contentView] frame].size.height - pt.y);
   pt = [NSEvent mouseLocation];
-  Fl::e_x_root = pt.x;
-  Fl::e_y_root = [[nsw screen] frame].size.height - pt.y;
+  Fl::e_x_root = int(pt.x);
+  Fl::e_y_root = int([[nsw screen] frame].size.height - pt.y);
 }
 
 /*
@@ -803,7 +800,6 @@ static void cocoaMouseHandler(NSEvent *theEvent)
   NSPoint pos = [theEvent locationInWindow];
   pos.y = window->h() - pos.y;
   NSInteger btn = [theEvent buttonNumber]  + 1;
-  int clickCount = [theEvent clickCount];
   NSUInteger mods = [theEvent modifierFlags];  
   int sendEvent = 0;
   
@@ -827,7 +823,7 @@ static void cocoaMouseHandler(NSEvent *theEvent)
       sendEvent = FL_PUSH;
       Fl::e_is_click = 1; 
       px = (int)pos.x; py = (int)pos.y;
-      if (clickCount>1) 
+      if ([theEvent clickCount] > 1) 
         Fl::e_clicks++;
       else
         Fl::e_clicks = 0;
@@ -875,141 +871,33 @@ static void cocoaMouseHandler(NSEvent *theEvent)
 }
 
 
-/*
- * keycode_function for post-10.5 systems, allows more sophisticated decoding of keys
- */
-/*
- static int keycodeToUnicode(
- char * uniChars, int maxChars,
- EventKind eKind,
- UInt32 keycode, UInt32 modifiers,
- UInt32 * deadKeyStatePtr,
- unsigned char,  // not used in this function
- unsigned short) // not used in this function
- {
-   // first get the keyboard mapping in a post 10.2 way
-   
-   Ptr resource;
-   TextEncoding encoding;
-   static TextEncoding lastEncoding = kTextEncodingMacRoman;
-   int len = 0;
-   KeyboardLayoutRef currentLayout = NULL;
-   static KeyboardLayoutRef lastLayout = NULL;
-   SInt32 currentLayoutId = 0;
-   static SInt32 lastLayoutId;
-   int hasLayoutChanged = false;
-   static Ptr uchr = NULL;
-   static Ptr KCHR = NULL;
-   // ScriptCode currentKeyScript;
-   
-   KLGetCurrentKeyboardLayout(&currentLayout);
-    if (currentLayout) {
-     KLGetKeyboardLayoutProperty(currentLayout, kKLIdentifier, (const void**)&currentLayoutId);
-     if ( (lastLayout != currentLayout) || (lastLayoutId != currentLayoutId) ) {
-       lastLayout = currentLayout;
-       lastLayoutId = currentLayoutId;
-       uchr = NULL;
-       KCHR = NULL;
-       if ((KLGetKeyboardLayoutProperty(currentLayout, kKLuchrData, (const void**)&uchr) == noErr) && (uchr != NULL)) {
-	 // done
-       } else if ((KLGetKeyboardLayoutProperty(currentLayout, kKLKCHRData, (const void**)&KCHR) == noErr) && (KCHR != NULL)) {
-	 // done
-       }
-       // FIXME No Layout property found. Now we have a problem. 
-     }
-   }
-   if (hasLayoutChanged) {
-     // deadKeyStateUp = deadKeyStateDown = 0;
-     if (KCHR != NULL) {
-       // FIXME this must not happen
-     } else if (uchr == NULL) {
-       KCHR = (Ptr) GetScriptManagerVariable(smKCHRCache);
-     }
-   }
-   if (uchr != NULL) {
-     // this is what I expect
-     resource = uchr;
-   } else {
-     resource = KCHR;
-     encoding = lastEncoding;
-     // this is actually not supported by the following code and will likely crash
-   }
-   
-   // now apply that keyboard mapping to our keycode
-   
-   int action;
-   //OptionBits options = 0;
-   // not used yet: OptionBits options = kUCKeyTranslateNoDeadKeysMask;
-   unsigned long keyboardType;
-   keycode &= 0xFF;
-   modifiers = (modifiers >> 8) & 0xFF;
-   keyboardType = LMGetKbdType();
-   OSStatus status;
-   UniCharCount actuallength;
-   UniChar utext[10];
-   
-   switch(eKind) {     
-     case kEventRawKeyDown:    action = kUCKeyActionDown; break;
-     case kEventRawKeyUp:      action = kUCKeyActionUp; break;
-     case kEventRawKeyRepeat:  action = kUCKeyActionAutoKey; break;
-     default: return 0;
-   }
-   
-   UInt32 deadKeyState = *deadKeyStatePtr;
-   if ((action==kUCKeyActionUp)&&(*deadKeyStatePtr)) {
-     deadKeyStatePtr = &deadKeyState;
-   }
-   
-   status = UCKeyTranslate((const UCKeyboardLayout *) uchr,
-			   keycode, action, modifiers, keyboardType,
-			   0, deadKeyStatePtr,
-			   10, &actuallength, utext);
-   
-   if (noErr != status) {
-     fprintf(stderr,"UCKeyTranslate failed: %d\n", (int) status);
-     actuallength = 0;
-   }
-   
-   // convert the list of unicode chars into utf8
-   // FIXME no bounds check (see maxchars)
-   unsigned i;
-   for (i=0; i<actuallength; ++i) {
-     len += fl_utf8encode(utext[i], uniChars+len);
-   }
-   uniChars[len] = 0;
-   return len;
- }
- */
-
-/*
- * keycode_function for pre-10.5 systems, this is the "historic" fltk Mac key handling
- */
-static int keycode_wrap_old(char * buffer,
-                            int, EventKind, UInt32, // not used in this function
-                            UInt32, UInt32 *,       // not used in this function
-                            unsigned char key,
-                            unsigned short sym)
+static void calc_e_text(CFStringRef s, char *buffer, size_t len, unsigned sym)
 {
-  if ( (sym >= FL_KP && sym <= FL_KP_Last) || !(sym & 0xff00) ||
-        sym == FL_Tab || sym == FL_Enter) {
-    buffer[0] = key;
-    return 1;
-  } else {
-    buffer[0] = 0;
-    return 0;
+  int i, no_text_key = false;
+  static unsigned notext[] = { // keys that don't emit text
+    FL_BackSpace, FL_Print, FL_Scroll_Lock, FL_Pause,
+    FL_Insert, FL_Home, FL_Page_Up, FL_Delete, FL_End, FL_Page_Down,
+    FL_Left, FL_Up, FL_Right, FL_Down, 
+    FL_Menu, FL_Num_Lock, FL_Help 
+  };
+  int count = sizeof(notext)/sizeof(int);
+   
+  if (sym > FL_F && sym <= FL_F_Last) no_text_key = true;
+  else for (i=0; i < count; i++) {
+    if (notext[i] == sym) {
+      no_text_key = true;
+      break;
+      }
   }
-} /* keycode_wrap_old */
-
-/* 
- * Stub pointer to select appropriate keycode_function per operating system version. This function pointer
- * is initialised in fl_open_display, based on the runtime identification of the host OS version. This is
- * intended to allow us to utilise 10.5 services dynamically to improve Unicode handling, whilst still 
- * allowing code to run satisfactorily on older systems.
- */
-static int (*keycode_function)(char*, int, EventKind, UInt32, UInt32, UInt32*, unsigned char, unsigned short) = keycode_wrap_old;
+  
+  if (no_text_key) {
+    buffer[0] = 0;
+  } else {
+    CFStringGetCString(s, buffer, len, kCFStringEncodingUTF8);
+  }
+}
 
 
-// EXPERIMENTAL!
 // this gets called by CJK character palette input
 OSStatus carbonTextHandler( EventHandlerCallRef nextHandler, EventRef event, void *unused )
 {
@@ -1018,20 +906,22 @@ OSStatus carbonTextHandler( EventHandlerCallRef nextHandler, EventRef event, voi
   if (keywindow == nil || ![keywindow isMemberOfClass:[FLWindow class]]) return eventNotHandledErr;
   // under 10.5 this gets called only after character palette inputs
   // but under 10.6 this gets also called by interpretKeyEvents 
-  // during character composition when we don't want to run it
+  // during keyboard input when we don't want to run it
   if ([[NSApp currentEvent] type] != NSSystemDefined) return eventNotHandledErr;
   Fl_Window *window = [(FLWindow*)keywindow getFl_Window];
   fl_lock_function();
-  // int kind = GetEventKind(event);
-  unsigned short buf[200];
-  ByteCount size;
+  UniChar ucs[20];
+  ByteCount actual_size;
+  unsigned int i;
   GetEventParameter( event, kEventParamTextInputSendText, typeUnicodeText, 
-                    NULL, 100, &size, &buf );
-  //  printf("TextEvent: %02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3]);
-  // FIXME: oversimplified!
-  unsigned ucs = buf[0];
-  char utf8buf[20];
-  int len = fl_utf8encode(ucs, utf8buf); 
+                    NULL, 20, &actual_size, ucs );
+  char utf8buf[50], *p;
+  p = utf8buf;
+  for(i=0; i < actual_size/2; i++) {
+    p += fl_utf8encode(ucs[i], p);
+    }
+  int len = p - utf8buf;
+  utf8buf[len]=0;
   
   Fl::e_length = len;
   Fl::e_text = utf8buf;
@@ -1047,190 +937,122 @@ OSStatus carbonTextHandler( EventHandlerCallRef nextHandler, EventRef event, voi
   return noErr;
 }
 
-static void processCompositionSequence(CFStringRef s, Fl_Window *window)
-// composed character sequences are sent here
-// they contain 2 unichars, the first comes from the deadkey and can be non ascii (e.g., diaeresis),
-// the second is the character to be modified (e.g., e to be accented)
-{
-  // unicodes: non-ascii unicode chars produced by deadkeys
-  // asciis: corresponding ascii chars expected by Fl::compose()
-  //                           diaeresis acute-accent circumflex tilde ring-above 
-  static UniChar unicodes[] = {0xA8,      0xB4,      0x2C6,     0x2DC, 0x2DA };
-  static char asciis[] = {     ':',        '\'',      '^',       '~',    '*' };
-  if (CFStringGetLength(s) == 0) return;
-  char text[10];
-  char buffer[10];
-  UniChar unis[2];
-  CFStringGetCharacters(s, CFRangeMake(0, 2), unis);
-  for(unsigned int i = 0; i < sizeof(asciis)/sizeof(char); i++) {
-    if (unis[0] == unicodes[i]) {
-      // replace the non-ascii unicode by the corresponding ascii value
-      unis[0] = (UniChar)asciis[i];
-      break;
-    }
-  }
-  CFStringRef smod = CFStringCreateWithCharacters(kCFAllocatorDefault, unis, 2);
-  CFStringGetCString(smod, buffer, sizeof(buffer), kCFStringEncodingUTF8);
-  CFRelease(smod);
-  Fl::e_keysym = 0;
-  Fl::e_state = 0;
-  Fl::e_length = 1;
-  Fl::e_text = text;
-  Fl::e_text[0] = buffer[0];
-  Fl::handle(FL_KEYBOARD, window);
-  Fl::e_keysym = 0;
-  Fl::e_state = 0;
-  Fl::e_length = 1;
-  Fl::e_text[0] = buffer[1];
-  Fl::handle(FL_KEYBOARD, window);
-}
+OSStatus cocoaKeyboardHandler(NSEvent *theEvent);
 
+@interface FLTextView : NSTextView
+{
+  BOOL compose_key; // YES iff entering a character composition
+  BOOL needKBhandler_val;
+}
+- (BOOL)needKBhandler;
+- (void)needKBhandler:(BOOL)value;
+- (BOOL)compose;
+- (void)compose:(BOOL)value;
+- (void)insertText:(id)aString;
+- (void)doCommandBySelector:(SEL)aSelector;
+@end
+@implementation FLTextView
+- (BOOL)needKBhandler
+{
+  return needKBhandler_val;
+}
+- (void)needKBhandler:(BOOL)value
+{
+  needKBhandler_val = value;
+}
+- (BOOL)compose
+{
+  return compose_key;
+}
+- (void)compose:(BOOL)value
+{
+  compose_key = value;
+}
+- (void)insertText:(id)aString
+{
+  cocoaKeyboardHandler([NSApp currentEvent]);
+}
+- (void)doCommandBySelector:(SEL)aSelector
+{
+  cocoaKeyboardHandler([NSApp currentEvent]);
+}
+@end
 
 /*
  * handle cocoa keyboard events
+Events during a character composition sequence:
+ - keydown with deadkey -> [[theEvent characters] length] is 0
+ - keyup -> [theEvent characters] contains the deadkey: display it temporarily
+ - keydown with next key -> [theEvent characters] contains the composed character: 
+    replace the temporary character by this one
+ - keyup -> [theEvent characters] contains the standard character
  */
 OSStatus cocoaKeyboardHandler(NSEvent *theEvent)
 {
   static char buffer[32];
-  int sendEvent = 0;
+  int sendEvent = 0, retval = 0;
   Fl_Window *window = (Fl_Window*)[(FLWindow*)[theEvent window] getFl_Window];
   Fl::first_window(window);
   NSUInteger mods;
   
   fl_lock_function();
-  
-  int kind = 0;
-  
-  // get the modifiers for any of the events
+  // get the modifiers
   mods = [theEvent modifierFlags];
-  
-  // get the key code only for key events
+  // get the key code
   UInt32 keyCode = 0, maskedKeyCode = 0;
-  unichar key = 0;
-  unsigned char keychar = 0;
   unsigned short sym = 0;
   keyCode = [theEvent keyCode];
-  NSString *s = [theEvent characters];
-  static BOOL compose = NO;
-  static NSText *edit;
-  static int countevents;
-  static CFMutableStringRef sequence;	// will contain the two characters of the composition sequence
+  NSString *s = [theEvent characters];  
+  FLTextView *edit = (FLTextView*)[[theEvent window]  fieldEditor:YES forObject:nil];
+  [edit needKBhandler:NO];
   if ( (mods & NSShiftKeyMask) && (mods & NSCommandKeyMask) ) {
     s = [s uppercaseString]; // US keyboards return lowercase letter in s if cmd-shift-key is hit
-  }
-  if (compose) {	// we are in a composition sequence
-    // the only benefit of sending events to the NSText object edit is that the deadkey becomes visible
-    // at its keyUp event; without this, the deadkey remains invisible
-    if ([s length] == 0) {	// occurs if 2 deadkeys are typed successively by error
-      compose = NO;
-      [edit setString:@""];
-      CFRelease(sequence);
-      fl_unlock_function();
-      return noErr;
-    }
-    [edit interpretKeyEvents:[NSArray arrayWithObject:theEvent]];
-    countevents++;
-    UniChar deadkey;
-    CFStringGetCharacters((CFStringRef)s, CFRangeMake(0, 1), &deadkey);
-    CFStringAppendCharacters(sequence, &deadkey, 1);// done for keyUp of deadkey and keyDown of next key
-    if (countevents >= 3) {	// end of composition sequence
-      processCompositionSequence( sequence, window );
-      CFRelease(sequence);
-      [edit setString:@""];	// clear the content of the edit object
-      compose=NO;		// character composition is now complete
-    }
-    fl_unlock_function();
-    return noErr;
-  }
-  if ([s length] == 0) {	// this is a dead key that must be combined with the next key to be pressed
-    while (window->parent()) window = window->window();
-    Fl::e_keysym = FL_Control_R; // first simulate pressing of the compose key (FL_Control_R)
-    Fl::e_text = (char*)"";
-    Fl::e_length = 0;
-    Fl::handle(FL_KEYBOARD, window); 
-    compose=YES;
-    // then send remaining events to an object of type NSText that helps handle character composition sequences
-    edit = [[theEvent window]  fieldEditor:YES forObject:nil];
-    [edit interpretKeyEvents:[NSArray arrayWithObject:theEvent]];
-    countevents = 1;
-    sequence = CFStringCreateMutable(NULL, 2);
-    fl_unlock_function();
-    return noErr;
-  } else {
-    char buff[10];
-    CFStringGetCString((CFStringRef)s, buff, sizeof(buff), kCFStringEncodingUnicode);
-    key = *(unichar*)buff;
-    keychar = buff[0];
   }
   // extended keyboards can also send sequences on key-up to generate Kanji etc. codes.
   // Some observed prefixes are 0x81 to 0x83, followed by an 8 bit keycode.
   // In this mode, there seem to be no key-down codes
   // printf("%08x %08x %08x\n", keyCode, mods, key);
   maskedKeyCode = keyCode & 0x7f;
-  /* output a human readable event identifier for debugging 
-   * const char *ev = "";
-   * switch (kind) {
-   *    case kEventRawKeyDown:             ev = "kEventRawKeyDown";             break;
-   *    case kEventRawKeyRepeat:           ev = "kEventRawKeyRepeat";           break;
-   *    case kEventRawKeyUp:               ev = "kEventRawKeyUp";               break;
-   *    case kEventRawKeyModifiersChanged: ev = "kEventRawKeyModifiersChanged"; break;
-   *    default:                           ev = "unknown";                      break;
-   * }
-   * printf("%08x %08x %08x '%c' %s \n", mods, keyCode, key, key, ev);
-   */
   switch([theEvent type]) {
     case NSKeyDown:
       sendEvent = FL_KEYBOARD;
       // fall through
-    case NSKeyUp: {
+    case NSKeyUp:
+      if([edit compose]) sendEvent = FL_KEYBOARD; // when composing, the temporary character appears at KeyUp
       if ( !sendEvent ) {
         sendEvent = FL_KEYUP;
         Fl::e_state &= 0xbfffffff; // clear the deadkey flag
       }
-      mods_to_e_state( mods ); // we process modifier keys at the same time
-      // if the user pressed alt/option, event_key should have the keycap, 
-      // but event_text should generate the international symbol
+      mods_to_e_state( mods ); // process modifier keys
       sym = macKeyLookUp[maskedKeyCode];
-      if ( isalpha(key) )
-        sym = tolower(key);
-      else if ( Fl::e_state&FL_CTRL && key<32 && sym<0xff00)
-        sym = key+96;
-      else if ( Fl::e_state&FL_ALT && sym<0xff00) {	// find the keycap of this key
+      if (sym < 0xff00) { // a "simple" key
+	// find the result of this key without modifier
 	NSString *sim = [theEvent charactersIgnoringModifiers];
 	UniChar one;
 	CFStringGetCharacters((CFStringRef)sim, CFRangeMake(0, 1), &one);
-	sym = one;
-	// charactersIgnoringModifiers does'nt ignore shift, remove it when it's on
-	if(sym >= 'A' && sym <= 'Z') sym += 32;
+	// charactersIgnoringModifiers doesn't ignore shift, remove it when it's on
+	if(one >= 'A' && one <= 'Z') one += 32;
+	if (one > 0 && one <= 0x7f && (sym<'0' || sym>'9') ) sym = one;
       }
-      
       Fl::e_keysym = Fl::e_original_keysym = sym;
       // Handle FL_KP_Enter on regular keyboards and on Powerbooks
-      if ( maskedKeyCode==0x4c || maskedKeyCode==0x34) key=0x0d;    
-      static UInt32 deadKeyState = 0; // must be cleared when losing focus
-      int l =  (*keycode_function)(buffer, 31, kind, keyCode, mods, &deadKeyState, keychar, sym);
-      if (l > 0) {
-        CFStringGetCString((CFStringRef)s, buffer, sizeof(buffer), kCFStringEncodingUTF8);
-      }
+      if ( maskedKeyCode==0x4c || maskedKeyCode==0x34) s = @"\r";    
+      calc_e_text((CFStringRef)s, buffer, sizeof(buffer), sym);
       Fl::e_length = strlen(buffer);
       Fl::e_text = buffer;
-      buffer[Fl::e_length] = 0; // just in case...
-      }
+    default:			// prevent 'not handled in switch' warnings
       break;
-    default:
-      fl_unlock_function();
-      return eventNotHandledErr;
   }
-  while (window->parent()) window = window->window();
-  if (sendEvent && Fl::handle(sendEvent,window)) {
-    fl_unlock_function();  
-    return noErr; // return noErr if FLTK handled the event
-  } else {
-    fl_unlock_function();
-    return eventNotHandledErr;
+  if (sendEvent) {
+    retval = Fl::handle(sendEvent,window);
+    if([edit compose]) {
+      Fl::compose_state = 1;
+      [edit compose:NO];
+    }
   }
+  fl_unlock_function();  
+  return retval ? (int)noErr : (int)eventNotHandledErr; // return noErr if FLTK handled the event
 }
-
 
 
 /*
@@ -1306,6 +1128,7 @@ extern "C" {
                                             UInt32 _arg3, UInt32 _arg4, UInt32 _arg5);
 }
 
+
 @interface FLDelegate : NSObject 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
 <NSWindowDelegate, NSApplicationDelegate>
@@ -1322,7 +1145,7 @@ extern "C" {
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender;
 - (void)applicationDidBecomeActive:(NSNotification *)notify;
 - (void)applicationWillResignActive:(NSNotification *)notify;
-
+- (id)windowWillReturnFieldEditor:(NSWindow *)sender toObject:(id)client;
 @end
 @implementation FLDelegate
 - (void)windowDidMove:(NSNotification *)notif
@@ -1412,7 +1235,7 @@ extern "C" {
 }
 /**
  * Cocoa organizes the Z depth of windows on a global priority. FLTK however
- * expectes the window manager to organize Z level by application. The trickery
+ * expects the window manager to organize Z level by application. The trickery
  * below will change Z order during activation and deactivation.
  */
 - (void)applicationDidBecomeActive:(NSNotification *)notify
@@ -1487,6 +1310,16 @@ extern "C" {
     }
   }
 }
+- (id)windowWillReturnFieldEditor:(NSWindow *)sender toObject:(id)client
+{
+  NSRect rect={{0,0},{20,20}};
+  static FLTextView *view = nil;
+  if (!view) {
+    view = [[FLTextView alloc] initWithFrame:rect];
+    [view compose:NO];
+    }
+  return view;
+}
 @end
 
 @interface FLApplication : NSApplication
@@ -1524,7 +1357,8 @@ void fl_open_display() {
     localPool = [[NSAutoreleasePool alloc] init]; 
     mydelegate = [[FLDelegate alloc] init];
     [NSApp setDelegate:mydelegate];
-    //[NSApp finishLaunching];		// Seb was here
+    //Seb was here
+    //[NSApp finishLaunching];
 		
     // empty the event queue but keep system events for drag&drop of files at launch
     NSEvent *ign_event;
@@ -1535,8 +1369,10 @@ void fl_open_display() {
     while (ign_event);
     
     fl_default_cursor = [NSCursor arrowCursor];
-    Gestalt(gestaltSystemVersion, &MACsystemVersion);
-    
+    SInt32 version;
+    Gestalt(gestaltSystemVersion, &version);
+    fl_mac_os_version = (int)version;
+
     // bring the application into foreground without a 'CARB' resource
     Boolean same_psn;
     ProcessSerialNumber cur_psn, front_psn;
@@ -1557,18 +1393,7 @@ void fl_open_display() {
         
         CFRelease(execUrl);
       }
-      
-      keycode_function = keycode_wrap_old; // under Cocoa we always use this one
-      /*  // imm: keycode handler stub setting - use Gestalt to determine the running system version,
-       *  // then set the keycode_function pointer accordingly
-       *  if (MACsystemVersion >= 0x1050) {      // 10.5.0 or later
-       *    keycode_function = keycodeToUnicode;
-       *  }
-       *  else {
-       *    keycode_function = keycode_wrap_old; // pre-10.5 mechanism
-       *  }
-       */
-      
+            
       if ( !bundle )
       {
         // Earlier versions of this code tried to use weak linking, however it
@@ -1592,7 +1417,10 @@ void fl_open_display() {
         }
       }
     }
-    //createAppleMenu();	//Seb was here
+    
+    // Removed to prevent clash with BMax's Apple Menu
+    // createAppleMenu();
+    
     // Install Carbon Event handler for character palette input
     static EventTypeSpec textEvents[] = {
       { kEventClassTextInput, kEventTextInputUnicodeForKeyEvent }
@@ -1615,16 +1443,16 @@ static void get_window_frame_sizes(int &bx, int &by, int &bt) {
   fl_open_display();
   NSRect inside = { {20,20}, {100,100} };
   NSRect outside = [NSWindow  frameRectForContentRect:inside styleMask:NSTitledWindowMask];
-  bx = outside.origin.x - inside.origin.x;
-  by = outside.origin.y - inside.origin.y;
-  bt = outside.size.height - inside.size.height - by;
+  bx = int(outside.origin.x - inside.origin.x);
+  by = int(outside.origin.y - inside.origin.y);
+  bt = int(outside.size.height - inside.size.height - by);
 }
 
 /*
  * smallest x ccordinate in screen space
  */
 int Fl::x() {
-  return [[NSScreen mainScreen] frame].origin.x;
+  return int([[NSScreen mainScreen] visibleFrame].origin.x);
 }
 
 
@@ -1634,25 +1462,23 @@ int Fl::x() {
 int Fl::y() {
   NSRect all = [[NSScreen mainScreen] frame];
   NSRect visible = [[NSScreen mainScreen] visibleFrame];
-  return all.size.height - (visible.origin.y + visible.size.height);
+  return int(all.size.height - (visible.origin.y + visible.size.height));
 }
 
 
 /*
- * screen width (single monitor!?)
+ * screen width
  */
 int Fl::w() {
-  return [[NSScreen mainScreen] visibleFrame].size.width;
+  return int([[NSScreen mainScreen] visibleFrame].size.width);
 }
 
 
 /*
- * screen height (single monitor!?)
+ * screen height
  */
 int Fl::h() {
-  int bx, by, bt;
-  get_window_frame_sizes(bx, by, bt);
-  return [[NSScreen mainScreen] frame].size.height - bt;
+  return int([[NSScreen mainScreen] visibleFrame].size.height);
 }
 
 
@@ -1663,22 +1489,10 @@ void Fl::get_mouse(int &x, int &y)
 {
   fl_open_display();
   NSPoint pt = [NSEvent mouseLocation];
-  x = pt.x;
-  y = [[NSScreen mainScreen] frame].size.height - pt.y;
+  x = int(pt.x);
+  y = int([[NSScreen mainScreen] frame].size.height - pt.y);
 }
 
-
-/*
- * convert Mac keystrokes to FLTK
- */
-/*
- * unsigned short mac2fltk(ulong macKey) 
- * {
- *   unsigned short cc = macKeyLookUp[(macKey>>8)&0x7f];
- *   if (cc) return cc;
- *   return macKey&0xff;
- * }
- */
 
 /*
  * Initialize the given port for redraw and call the window's flush() to actually draw the content
@@ -1698,24 +1512,6 @@ static void handleUpdateEvent( Fl_Window *window )
   Fl_X *i = Fl_X::i( window );
   i->wait_for_expose = 0;
 
-  // FIXME: Matt: this is in the Carbon version. Does it need to be here?
-  /* 
-   * // I don't think so (MG). This function gets called only when a full
-   * // redraw is needed (creation, resize, deminiaturization)
-   * // and later in it we set damages to DAMAGE_ALL, so there is no
-   * // point in limiting redraw to i->region
-   * if ( i->xid && window->damage() ) {
-   *   NSView *view = [(NSWindow*)i->xid contentView];
-   *   if ( view && i->region ) {
-   *     int ix;
-   *     Fl_Region rgn = i->region;
-   *     for (ix=0; ix<rgn->count; ix++) {
-   *       NSRect rect = NSRectFromCGRect(rgn->rects[ix]);
-   *       [view setNeedsDisplayInRect:rect];
-   *     }
-   *   }
-   * }
-   */ 
   if ( i->region ) {
     XDestroyRegion(i->region);
     i->region = 0;
@@ -1734,6 +1530,7 @@ static void handleUpdateEvent( Fl_Window *window )
   i->flush();
   window->clear_damage();
 }     
+
 
 int Fl_X::fake_X_wm(const Fl_Window* w,int &X,int &Y, int &bt,int &bx, int &by) {
   int W, H, xoff, yoff, dx, dy;
@@ -1772,9 +1569,9 @@ int Fl_X::fake_X_wm(const Fl_Window* w,int &X,int &Y, int &bt,int &bx, int &by) 
   NSArray *a = [NSScreen screens]; int count = (int)[a count]; NSRect r; int i;
   for( i = 0; i < count; i++) {
     r = [[a objectAtIndex:i] frame];
-    cy = r.size.height - cy;
-    if (    cx >= r.origin.x && cx <= r.origin.x + r.size.width
-        && cy >= r.origin.y  && cy <= r.origin.y + r.size.height)
+    cy = int(r.size.height - cy);
+    if (   cx >= r.origin.x && cx <= r.origin.x + r.size.width
+        && cy >= r.origin.y && cy <= r.origin.y + r.size.height)
       break;
   }
   if (i < count) gd = [a objectAtIndex:i];
@@ -1824,11 +1621,11 @@ int Fl_X::fake_X_wm(const Fl_Window* w,int &X,int &Y, int &bt,int &bx, int &by) 
   if (!gd) gd = [a objectAtIndex:0];
   if (gd) {
     r = [gd visibleFrame];
-    int sh = [gd frame].size.height;
-    if ( R > r.origin.x + r.size.width )  X -= R - (r.origin.x + r.size.width);
-    if ( B > sh - r.origin.y ) Y -= B - (sh - r.origin.y);
-    if ( X < r.origin.x )   X = r.origin.x;
-    if ( Y < sh - (r.origin.y + r.size.height) )    Y = sh - (r.origin.y + r.size.height);
+    int sh = int([gd frame].size.height);
+    if ( R > r.origin.x + r.size.width ) X -= int(R - (r.origin.x + r.size.width));
+    if ( B > sh - r.origin.y ) Y -= int(B - (sh - r.origin.y));
+    if ( X < r.origin.x ) X = int(r.origin.x);
+    if ( Y < sh - (r.origin.y + r.size.height) ) Y = int(sh - (r.origin.y + r.size.height));
   }
   
   // Return the client area's top left corner in (X,Y)
@@ -1931,7 +1728,13 @@ static void  q_set_window_title(NSWindow *nsw, const char * name ) {
   cocoaMouseWheelHandler(theEvent);
 }
 - (void)keyDown:(NSEvent *)theEvent {
-  cocoaKeyboardHandler(theEvent);
+  FLTextView *edit = (FLTextView*)[[theEvent window]  fieldEditor:YES forObject:nil];
+  if ([[theEvent characters] length] == 0) [edit compose:YES];
+  if (Fl::compose_state)  [edit needKBhandler:YES];
+  else [edit needKBhandler:NO];
+  [edit interpretKeyEvents:[NSArray arrayWithObject:theEvent]];
+  // in some cases (e.g., some Greek letters with tonos) interpretKeyEvents does not call insertText
+  if ([edit needKBhandler]) cocoaKeyboardHandler(theEvent);
 }
 - (void)keyUp:(NSEvent *)theEvent {
   cocoaKeyboardHandler(theEvent);
@@ -2211,12 +2014,12 @@ void Fl_X::make(Fl_Window* w)
     }
     
     crect = [[cw contentView] frame];
-    w->w(crect.size.width);
-    w->h(crect.size.height);
+    w->w(int(crect.size.width));
+    w->h(int(crect.size.height));
     crect = [cw frame];
-    w->x(crect.origin.x);
+    w->x(int(crect.origin.x));
     srect = [[cw screen] frame];
-    w->y(srect.size.height - (crect.origin.y + w->h()));
+    w->y(int(srect.size.height - (crect.origin.y + w->h())));
     
     int old_event = Fl::e_number;
     w->handle(Fl::e_number = FL_SHOW);
@@ -2935,10 +2738,10 @@ int MACscreen_init(XRectangle screens[])
   int i, num_screens = 0;
   for( i = 0; i < count; i++) {
     r = [[a objectAtIndex:i] frame];
-    screens[num_screens].x      = r.origin.x;
-    screens[num_screens].y      = r.size.height - (r.origin.y + r.size.height);
-    screens[num_screens].width  = r.size.width;
-    screens[num_screens].height = r.size.height;
+    screens[num_screens].x      = int(r.origin.x);
+    screens[num_screens].y      = int(r.size.height - (r.origin.y + r.size.height));
+    screens[num_screens].width  = int(r.size.width);
+    screens[num_screens].height = int(r.size.height);
     num_screens ++;
     if (num_screens >= 16) break;
   }
@@ -2957,7 +2760,7 @@ int MACscreen_init(XRectangle screens[])
 {
     NSDictionary *options;
     options = [NSDictionary dictionaryWithObjectsAndKeys:
-                	     [NSString stringWithFormat:@" FLTK %d.%d Cocoa", FL_MAJOR_VERSION,
+                	     [NSString stringWithFormat:@" GUI with FLTK %d.%d", FL_MAJOR_VERSION,
                               FL_MINOR_VERSION ], @"Copyright",
                 	     nil];
     [NSApp  orderFrontStandardAboutPanelWithOptions:options];
@@ -3015,13 +2818,12 @@ static void createAppleMenu(void)
   FLaboutItemTarget *about = [[FLaboutItemTarget alloc] init];
   [menuItem setTarget:about];
   [appleMenu addItem:[NSMenuItem separatorItem]];
-// temporary for testing Fl_Printer. Contains also printPanel of class FLaboutItemTarget.
+  // Print front window
   menuItem = [appleMenu addItemWithTitle:@"Print front window" action:@selector(printPanel) keyEquivalent:@""];
   [menuItem setTarget:about];
   [appleMenu setAutoenablesItems:NO];
   [menuItem setEnabled:YES];
   [appleMenu addItem:[NSMenuItem separatorItem]];
-// end of temporary for testing Fl_Printer  
   // Services Menu
   services = [[NSMenu alloc] init];
   [appleMenu addItemWithTitle:@"Services" action:nil keyEquivalent:@""];
@@ -3044,10 +2846,10 @@ static void createAppleMenu(void)
   [menuItem setSubmenu:appleMenu];
   mainmenu = [[NSMenu alloc] initWithTitle:@""];
   [mainmenu addItem:menuItem];
-  if (MACsystemVersion < 0x1060) {
+  if (fl_mac_os_version < 0x1060) {
     //	[NSApp setAppleMenu:appleMenu];
     //	to avoid compiler warning raised by use of undocumented setAppleMenu	:
-  [NSApp performSelector:@selector(setAppleMenu:) withObject:appleMenu];
+    [NSApp performSelector:@selector(setAppleMenu:) withObject:appleMenu];
   }
   [NSApp setServicesMenu:services];
   [NSApp setMainMenu:mainmenu];
@@ -3298,13 +3100,13 @@ static NSImage *imageFromText(const char *text, int *pwidth, int *pheight)
   int nl = 0;
   while((q=strchr(p, '\n')) != NULL) { 
     nl++; 
-    w2 = fl_width(p, q - p);
+    w2 = int(fl_width(p, q - p));
     if (w2 > width) width = w2;
     p = q + 1; 
   }
   if (text[ ltext - 1] != '\n') {
     nl++;
-    w2 = fl_width(p);
+    w2 = int(fl_width(p));
     if (w2 > width) width = w2;
   }
   height = nl * fl_height() + 3;
@@ -3408,7 +3210,7 @@ unsigned char *MACbitmapFromRectOfWindow(Fl_Window *win, int x, int y, int w, in
     win = win->window();
   }
   CGFloat epsilon = 0;
-  if (MACsystemVersion >= 0x1060) epsilon = 0.001;
+  if (fl_mac_os_version >= 0x1060) epsilon = 0.001;
   // The epsilon offset is absolutely necessary under 10.6. Without it, the top pixel row and
   // left pixel column are not read, and bitmap is read shifted by one pixel in both directions. 
   // Under 10.5, we want no offset.

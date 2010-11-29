@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_BMP_Image.H 6614 2009-01-01 16:11:32Z matt $"
+// "$Id: Fl_BMP_Image.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // BMP image header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -46,5 +46,5 @@ class FL_EXPORT Fl_BMP_Image : public Fl_RGB_Image {
 #endif
 
 //
-// End of "$Id: Fl_BMP_Image.H 6614 2009-01-01 16:11:32Z matt $".
+// End of "$Id: Fl_BMP_Image.H 7903 2010-11-28 21:06:39Z matt $".
 //

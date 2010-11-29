@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_PNM_Image.cxx 6616 2009-01-01 21:28:26Z matt $"
+// "$Id: Fl_PNM_Image.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Fl_PNM_Image routines.
 //
-// Copyright 1997-2009 by Easy Software Products.
+// Copyright 1997-2010 by Easy Software Products.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -166,7 +166,7 @@ Fl_PNM_Image::Fl_PNM_Image(const char *name)	// I - File to read
       case 5 :
       case 6 :
         if (maxval < 256) {
-          fread(ptr, w(), d(), fp);
+          if (fread(ptr, w(), d(), fp)) { /* ignored */ }
         } else {
           for (x = d() * w(); x > 0; x --) {
             val = (uchar)getc(fp);
@@ -193,5 +193,5 @@ Fl_PNM_Image::Fl_PNM_Image(const char *name)	// I - File to read
 
 
 //
-// End of "$Id: Fl_PNM_Image.cxx 6616 2009-01-01 21:28:26Z matt $".
+// End of "$Id: Fl_PNM_Image.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

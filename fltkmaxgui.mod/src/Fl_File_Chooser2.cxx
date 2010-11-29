@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_File_Chooser2.cxx 7219 2010-03-05 18:53:00Z AlbrechtS $"
+// "$Id: Fl_File_Chooser2.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // More Fl_File_Chooser routines.
 //
-// Copyright 1999-2009 by Michael Sweet.
+// Copyright 1999-2010 by Michael Sweet.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -727,6 +727,7 @@ Fl_File_Chooser::fileListCB()
     {
       // Hide the window - picked the file...
       window->hide();
+      if (callback_) (*callback_)(this, data_);
     }
   }
   else
@@ -1031,6 +1032,8 @@ Fl_File_Chooser::filter(const char *p)		// I - Pattern(s)
   if (!allfiles) showChoice->add(all_files_label);
 
   showChoice->add(custom_filter_label);
+  
+  // TODO: add a menu item to switch hidden files on and off
 
   showChoice->value(0);
   showChoiceCB();
@@ -1343,7 +1346,7 @@ Fl_File_Chooser::update_preview()
     int		bytes;
     char	*ptr;
 
-    if (filename) fp = fopen(filename, "rb");
+    if (filename) fp = fl_fopen(filename, "rb");
     else fp = NULL;
 
     if (fp != NULL) {
@@ -1648,5 +1651,5 @@ unquote_pathname(char       *dst,	// O - Destination string
 
 
 //
-// End of "$Id: Fl_File_Chooser2.cxx 7219 2010-03-05 18:53:00Z AlbrechtS $".
+// End of "$Id: Fl_File_Chooser2.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Text_Editor.cxx 7462 2010-04-06 23:00:56Z matt $"
+// "$Id: Fl_Text_Editor.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
-// Copyright 2001-2009 by Bill Spitzak and others.
+// Copyright 2001-2010 by Bill Spitzak and others.
 // Original code Copyright Mark Edel.  Permission to distribute under
-// the LGPL for the FLTK library granted by Mark Edel.
+// the LGPL for the FLTK library granted by Mark E.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -234,6 +234,7 @@ static void kill_selection(Fl_Text_Editor* e) {
 
 /** Inserts the text associated with the key */
 int Fl_Text_Editor::kf_default(int c, Fl_Text_Editor* e) {
+  // FIXME: this function is a mess! Fix this!
   if (!c || (!isprint(c) && c != '\t')) return 0;
   char s[2] = "\0";
   s[0] = (char)c;
@@ -253,13 +254,9 @@ int Fl_Text_Editor::kf_ignore(int, Fl_Text_Editor*) {
 /**  Does a backspace in the current buffer.*/
 int Fl_Text_Editor::kf_backspace(int, Fl_Text_Editor* e) {
   if (!e->buffer()->selected() && e->move_left()) {
-    int l = 1;
-    // FIXME: character is ucs-4
-    char c = e->buffer()->character(e->insert_position());
-    if (c & 0x80 && c & 0x40) {
-      l = fl_utf8len(c);
-    }
-    e->buffer()->select(e->insert_position(), e->insert_position()+l);
+    int p1 = e->insert_position();
+    int p2 = e->buffer()->next_char(p1);
+    e->buffer()->select(p1, p2);
   }
   kill_selection(e);
   e->show_insert_position();
@@ -449,13 +446,9 @@ int Fl_Text_Editor::kf_insert(int, Fl_Text_Editor* e) {
 /**  Does a delete of selected text or the current character in the current buffer.*/
 int Fl_Text_Editor::kf_delete(int, Fl_Text_Editor* e) {
   if (!e->buffer()->selected()) {
-    int l = 1;
-    // FIXME: character is ucs-4
-    char c = e->buffer()->character(e->insert_position());
-    if (c & 0x80 && c & 0x40) {
-      l = fl_utf8len(c);
-    }
-    e->buffer()->select(e->insert_position(), e->insert_position()+l);
+    int p1 = e->insert_position();
+    int p2 = e->buffer()->next_char(p1);
+    e->buffer()->select(p1, p2);
   }
 
   kill_selection(e);
@@ -519,7 +512,11 @@ int Fl_Text_Editor::handle_key() {
   // bytes to delete and a string to insert:
   int del = 0;
   if (Fl::compose(del)) {
-    if (del) buffer()->select(insert_position()-del, insert_position());
+    if (del) {
+      int dp = insert_position(), di = del;
+      while (di--) dp = buffer()->prev_char_clipped(dp);
+      buffer()->select(dp, insert_position());
+    }
     kill_selection(this);
     if (Fl::event_length()) {
       if (insert_mode()) insert(Fl::event_text());
@@ -549,6 +546,8 @@ void Fl_Text_Editor::maybe_do_callback() {
 }
 
 int Fl_Text_Editor::handle(int event) {
+  static int dndCursorPos;
+  
   if (!buffer()) return 0;
 
   switch (event) {
@@ -593,7 +592,7 @@ int Fl_Text_Editor::handle(int event) {
       if (Fl::event_button() == 2) {
         // don't let the text_display see this event
         if (Fl_Group::handle(event)) return 1;
-        dragType = -1;
+        dragType = DRAG_NONE;
         Fl::paste(*this, 0);
         Fl::focus(this);
         set_changed();
@@ -610,11 +609,29 @@ int Fl_Text_Editor::handle(int event) {
         return 1;
       }
       break;
+      
+      // Handle drag'n'drop attempt by the user. This is a simplified 
+      // implementation which allows dnd operations onto the scroll bars.
+    case FL_DND_ENTER: // save the current cursor position
+      if (Fl::visible_focus() && handle(FL_FOCUS))
+        Fl::focus(this);
+      show_cursor(mCursorOn);
+      dndCursorPos = insert_position();
+      /* fall through */
+    case FL_DND_DRAG: // show a temporary insertion cursor
+      insert_position(xy_to_position(Fl::event_x(), Fl::event_y(), CURSOR_POS));
+      return 1;      
+    case FL_DND_LEAVE: // restore original cursor
+      insert_position(dndCursorPos);
+      return 1;      
+    case FL_DND_RELEASE: // keep insertion cursor and wait for the FL_PASTE event
+      buffer()->unselect(); // FL_PASTE must not destroy current selection!
+      return 1;
   }
 
   return Fl_Text_Display::handle(event);
 }
 
 //
-// End of "$Id: Fl_Text_Editor.cxx 7462 2010-04-06 23:00:56Z matt $".
+// End of "$Id: Fl_Text_Editor.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

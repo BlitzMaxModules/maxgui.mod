@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Gl_Window.H 7280 2010-03-16 22:51:31Z matt $"
+// "$Id: Fl_Gl_Window.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // OpenGL header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -87,7 +87,8 @@ public:
   void flush();
   void hide();
   void resize(int,int,int,int);
-
+  int handle(int);
+  
   /**
     Is turned off when FLTK creates a new context for this window or 
     when the window resizes, and is turned on \e after draw() is called.
@@ -239,5 +240,5 @@ protected:
 #endif
 
 //
-// End of "$Id: Fl_Gl_Window.H 7280 2010-03-16 22:51:31Z matt $".
+// End of "$Id: Fl_Gl_Window.H 7903 2010-11-28 21:06:39Z matt $".
 //

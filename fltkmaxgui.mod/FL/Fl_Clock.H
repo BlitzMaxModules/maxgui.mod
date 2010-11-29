@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Clock.H 6812 2009-07-01 07:27:25Z AlbrechtS $"
+// "$Id: Fl_Clock.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Clock header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -133,5 +133,5 @@ public:
 #endif
 
 //
-// End of "$Id: Fl_Clock.H 6812 2009-07-01 07:27:25Z AlbrechtS $".
+// End of "$Id: Fl_Clock.H 7903 2010-11-28 21:06:39Z matt $".
 //

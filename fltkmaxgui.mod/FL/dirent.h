@@ -1,9 +1,9 @@
 //
-// "$Id: dirent.h 7504 2010-04-14 20:17:44Z matt $"
+// "$Id: dirent.h 7903 2010-11-28 21:06:39Z matt $"
 //
 // Directory header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -30,5 +30,5 @@
 #include "filename.H"
 
 //
-// End of "$Id: dirent.h 7504 2010-04-14 20:17:44Z matt $".
+// End of "$Id: dirent.h 7903 2010-11-28 21:06:39Z matt $".
 //

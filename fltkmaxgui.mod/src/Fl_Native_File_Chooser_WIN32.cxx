@@ -1,4 +1,4 @@
-// "$Id: Fl_Native_File_Chooser_WIN32.cxx 7312 2010-03-21 22:55:18Z fabien $"
+// "$Id: Fl_Native_File_Chooser_WIN32.cxx 7706 2010-09-27 14:57:53Z AlbrechtS $"
 //
 // FLTK native OS file chooser widget
 //
@@ -46,6 +46,8 @@ char *wchartoutf8(LPCWSTR in);  //MG
 #define LBRACKET_CHR	'['
 #define RBRACKET_CHR	']'
 #define MAXFILTERS	80
+
+void fl_OleInitialize();	// in Fl.cxx (Windows only)
 
 // STATIC: PRINT WINDOWS 'DOUBLE NULL' STRING (DEBUG)
 static void dnullprint(char *wp) {
@@ -464,7 +466,8 @@ int CALLBACK Fl_Native_File_Chooser::Dir_CB(HWND win, UINT msg, LPARAM param, LP
 
 // SHOW DIRECTORY BROWSER
 int Fl_Native_File_Chooser::showdir() {
-  OleInitialize(NULL);		// init needed by BIF_USENEWUI
+  // initialize OLE only once
+  fl_OleInitialize();		// init needed by BIF_USENEWUI
   ClearBINF();
   clear_pathnames();
   // PARENT WINDOW
@@ -847,5 +850,5 @@ LPCWSTR utf8towchar(const char *in)
 #endif /*!FL_DOXYGEN*/
 
 //
-// End of "$Id: Fl_Native_File_Chooser_WIN32.cxx 7312 2010-03-21 22:55:18Z fabien $".
+// End of "$Id: Fl_Native_File_Chooser_WIN32.cxx 7706 2010-09-27 14:57:53Z AlbrechtS $".
 //

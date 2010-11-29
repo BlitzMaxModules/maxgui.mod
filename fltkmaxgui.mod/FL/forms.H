@@ -1,9 +1,9 @@
 //
-// "$Id: forms.H 7117 2010-02-20 21:14:47Z matt $"
+// "$Id: forms.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Forms emulation header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -652,7 +652,7 @@ inline int fl_show_question(const char* c, int = 0) {return fl_choice("%s",fl_no
 FL_EXPORT void fl_show_message(const char *,const char *,const char *);
 FL_EXPORT void fl_show_alert(const char *,const char *,const char *,int=0);
 FL_EXPORT int fl_show_question(const char *,const char *,const char *);
-inline const char *fl_show_input(const char *l,const char*d=0) {return fl_input(l,d);}
+inline const char *fl_show_input(const char *l,const char*d=0) {return fl_input("%s",d,l);}
 FL_EXPORT /*const*/ char *fl_show_simple_input(const char *label, const char *deflt = 0);
 FL_EXPORT int fl_show_choice(
     const char *m1,
@@ -841,5 +841,5 @@ inline void fl_draw() {Fl::flush();}
 #endif	/* define __FORMS_H__ */
 
 //
-// End of "$Id: forms.H 7117 2010-02-20 21:14:47Z matt $".
+// End of "$Id: forms.H 7903 2010-11-28 21:06:39Z matt $".
 //

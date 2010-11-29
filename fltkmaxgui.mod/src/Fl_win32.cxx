@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_win32.cxx 7617 2010-05-27 17:20:18Z manolo $"
+// "$Id: Fl_win32.cxx 7814 2010-11-11 08:38:36Z AlbrechtS $"
 //
 // WIN32-specific code for the Fast Light Tool Kit (FLTK).
 //
@@ -61,15 +61,12 @@
 #include <winuser.h>
 #include <commctrl.h>
 
-#if defined(__GNUC__) && __GNUC__ >= 3
+#if defined(__GNUC__)
 # include <wchar.h>
 #endif
 
-// The following include files require GCC 3.x or a non-GNU compiler...
-#if !defined(__GNUC__) || __GNUC__ >= 3
 #  include <ole2.h>
 #  include <shellapi.h>
-#endif // !__GNUC__ || __GNUC__ >= 3
 
 #include "aimm.h"
 
@@ -98,7 +95,7 @@
 static Fl_GDI_Graphics_Driver fl_gdi_driver;
 static Fl_Display_Device fl_gdi_display(&fl_gdi_driver);
 FL_EXPORT Fl_Display_Device *fl_display_device = (Fl_Display_Device*)&fl_gdi_display; // does not change
-FL_EXPORT Fl_Graphics_Driver *fl_device = (Fl_Graphics_Driver*)&fl_gdi_driver; // the current target driver of graphics operations
+FL_EXPORT Fl_Graphics_Driver *fl_graphics_driver = (Fl_Graphics_Driver*)&fl_gdi_driver; // the current target driver of graphics operations
 FL_EXPORT Fl_Surface_Device *fl_surface = (Fl_Surface_Device*)fl_display_device; // the current target surface of graphics operations
 
 // dynamic wsock dll handling api:
@@ -245,9 +242,7 @@ static Fl_Window *track_mouse_win=0;	// current TrackMouseEvent() window
 static int maxfd = 0;
 static fd_set fdsets[3];
 
-#if !defined(__GNUC__) || __GNUC__ >= 3
 extern IDropTarget *flIDropTarget;
-#endif // !__GNUC__ || __GNUC__ >= 3
 
 static int nfds = 0;
 static int fd_array_size = 0;
@@ -1400,14 +1395,16 @@ Fl_X* Fl_X::make(Fl_Window* w) {
     first_class_name = class_name;
   }
 
-  const wchar_t* class_namew = L"FLTK";
-  const wchar_t* message_namew = L"FLTK::ThreadWakeup";
-  if (!class_name_list.has_name(class_name)) {
-    WNDCLASSEX wc;
-    WNDCLASSEXW wcw;
+  wchar_t class_namew[100]; // (limited) buffer for Windows class name
 
-    memset(&wc, 0, sizeof(wc));
-    wc.cbSize = sizeof(WNDCLASSEX);
+  // convert UTF-8 class_name to wchar_t for RegisterClassExW and CreateWindowExW
+
+  fl_utf8toUtf16(class_name,strlen(class_name),		// in
+		 (unsigned short*)class_namew,		// out
+		 sizeof(class_namew)/sizeof(wchar_t));	// max. size
+
+  if (!class_name_list.has_name(class_name)) {
+    WNDCLASSEXW wcw;
     memset(&wcw, 0, sizeof(wcw));
     wcw.cbSize = sizeof(WNDCLASSEXW);
 
@@ -1428,13 +1425,11 @@ Fl_X* Fl_X::make(Fl_Window* w) {
     wcw.hbrBackground = NULL;
     wcw.lpszMenuName = NULL;
     wcw.lpszClassName = class_namew;
-    wcw.cbSize = sizeof(WNDCLASSEXW);
     RegisterClassExW(&wcw);
-    class_name_list.add_name((const char *)class_namew);
+    class_name_list.add_name(class_name);
   }
 
-  // const char* message_name = "FLTK::ThreadWakeup";
-  // if (!fl_wake_msg) fl_wake_msg = RegisterWindowMessage(message_name);
+  const wchar_t* message_namew = L"FLTK::ThreadWakeup";
   if (!fl_wake_msg) fl_wake_msg = RegisterWindowMessageW(message_namew);
 
   HWND parent;
@@ -1551,24 +1546,17 @@ Fl_X* Fl_X::make(Fl_Window* w) {
   ShowWindow(x->xid, !showit ? SW_SHOWMINNOACTIVE :
 	     (Fl::grab() || (style & WS_POPUP)) ? SW_SHOWNOACTIVATE : SW_SHOWNORMAL);
 
-  // Drag-n-drop requires GCC 3.x or a non-GNU compiler...
-#if !defined(__GNUC__) || __GNUC__ >= 3
   // Register all windows for potential drag'n'drop operations
-  static char oleInitialized = 0;
-  if (!oleInitialized) { OleInitialize(0L); oleInitialized=1; }
-
+  fl_OleInitialize();
   RegisterDragDrop(x->xid, flIDropTarget);
+
   if (!fl_aimm) {
-    static char been_here = 0;
-    if (!been_here && !oleInitialized) CoInitialize(NULL);
-    been_here = 1;
     CoCreateInstance(CLSID_CActiveIMM, NULL, CLSCTX_INPROC_SERVER,
 		     IID_IActiveIMMApp, (void**) &fl_aimm);
     if (fl_aimm) {
       fl_aimm->Activate(TRUE);
     }
   }
-#endif // !__GNUC__ || __GNUC__ >= 3
 
   if (w->modal()) {Fl::modal_ = w; fl_fix_focus();}
   return x;
@@ -1989,5 +1977,5 @@ void preparePrintFront(void)
 #endif // FL_DOXYGEN
 
 //
-// End of "$Id: Fl_win32.cxx 7617 2010-05-27 17:20:18Z manolo $".
+// End of "$Id: Fl_win32.cxx 7814 2010-11-11 08:38:36Z AlbrechtS $".
 //

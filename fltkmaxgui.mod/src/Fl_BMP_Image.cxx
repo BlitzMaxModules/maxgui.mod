@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_BMP_Image.cxx 6616 2009-01-01 21:28:26Z matt $"
+// "$Id: Fl_BMP_Image.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Fl_BMP_Image routines.
 //
-// Copyright 1997-2009 by Easy Software Products.
+// Copyright 1997-2010 by Easy Software Products.
 // Image support by Matthias Melcher, Copyright 2000-2009.
 //
 // This library is free software; you can redistribute it and/or
@@ -35,6 +35,7 @@
 //
 
 #include <FL/Fl_BMP_Image.H>
+#include <FL/fl_utf8.h>
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,7 +94,7 @@ Fl_BMP_Image::Fl_BMP_Image(const char *bmp) // I - File to read
 
 
   // Open the file...
-  if ((fp = fopen(bmp, "rb")) == NULL) return;
+  if ((fp = fl_fopen(bmp, "rb")) == NULL) return;
 
   // Get the header...
   byte = (uchar)getc(fp);	// Check "BM" sync chars
@@ -177,7 +178,7 @@ Fl_BMP_Image::Fl_BMP_Image(const char *bmp) // I - File to read
 
   for (repcount = 0; repcount < colors_used; repcount ++) {
     // Read BGR color...
-    fread(colormap[repcount], 1, 3, fp);
+    if (fread(colormap[repcount], 1, 3, fp)==0) { /* ignore */ }
 
     // Skip pad byte for new BMP files...
     if (info_size > 12) getc(fp);
@@ -490,5 +491,5 @@ read_long(FILE *fp) {		// I - File to read from
 
 
 //
-// End of "$Id: Fl_BMP_Image.cxx 6616 2009-01-01 21:28:26Z matt $".
+// End of "$Id: Fl_BMP_Image.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

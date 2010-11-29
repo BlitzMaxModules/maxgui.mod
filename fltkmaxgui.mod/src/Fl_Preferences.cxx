@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Preferences.cxx 7415 2010-04-03 13:03:43Z manolo $"
+// "$Id: Fl_Preferences.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Preferences methods for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 2002-2009 by Matthias Melcher.
+// Copyright 2002-2010 by Matthias Melcher.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -28,7 +28,6 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl_Plugin.H>
-#include <FL/Fl_Tree.H>
 #include <FL/filename.H>
 
 #include <stdio.h>
@@ -137,11 +136,17 @@ const char *Fl_Preferences::newUUID()
     b[5] = (unsigned char)(r>>8);
     b[6] = (unsigned char)(r>>16);
     b[7] = (unsigned char)(r>>24);
-    unsigned int a = (unsigned int)&t; // four more bytes
-    b[8] = (unsigned char)a;
-    b[9] = (unsigned char)(a>>8);
-    b[10] = (unsigned char)(a>>16);
-    b[11] = (unsigned char)(a>>24);
+    // Now we try to find 4 more "random" bytes. We extract the
+    // lower 4 bytes from the address of t - it is created on the
+    // stack so *might* be in a different place each time...
+    // This is now done via a union to make it compile OK on 64-bit systems.
+    union { void *pv; unsigned char a[sizeof(void*)]; } v;
+    v.pv = (void *)(&t);
+	// NOTE: This assume that all WinXX systems are little-endian
+    b[8] = v.a[0];
+    b[9] = v.a[1];
+    b[10] = v.a[2];
+    b[11] = v.a[3];
     TCHAR name[MAX_COMPUTERNAME_LENGTH + 1]; // only used to make last four bytes
     DWORD nSize = MAX_COMPUTERNAME_LENGTH + 1;
     // GetComputerName() does not depend on any extra libs, and returns something
@@ -156,7 +161,7 @@ const char *Fl_Preferences::newUUID()
             b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]);
   }
 #else
-#warning Unix implementation incomplete!
+  // warning Unix implementation of Fl_Preferences::newUUID() incomplete!
   // #include <uuid/uuid.h>
   // void uuid_generate(uuid_t out);
   unsigned char b[16];
@@ -175,6 +180,24 @@ const char *Fl_Preferences::newUUID()
   b[9] = (unsigned char)(a>>8);
   b[10] = (unsigned char)(a>>16);
   b[11] = (unsigned char)(a>>24);
+  // Now we try to find 4 more "random" bytes. We extract the
+  // lower 4 bytes from the address of t - it is created on the
+  // stack so *might* be in a different place each time...
+  // This is now done via a union to make it compile OK on 64-bit systems.
+  union { void *pv; unsigned char a[sizeof(void*)]; } v;
+  v.pv = (void *)(&t);
+  // NOTE: May need to handle big- or little-endian systems here
+# if WORDS_BIGENDIAN
+  b[8] = v.a[sizeof(void*) - 1];
+  b[9] = v.a[sizeof(void*) - 2];
+  b[10] = v.a[sizeof(void*) - 3];
+  b[11] = v.a[sizeof(void*) - 4];
+# else /* data ordered for a little-endian system */
+  b[8] = v.a[0];
+  b[9] = v.a[1];
+  b[10] = v.a[2];
+  b[11] = v.a[3];
+# endif
   char name[80]; // last four bytes
   gethostname(name, 79);
   memcpy(b+12, name, 4);
@@ -376,17 +399,6 @@ Fl_Preferences::~Fl_Preferences()
   // Valgrind does not complain (Cygwind does though)
   node = 0L;
   rootNode = 0L;
-}
-
-
-/**
-  Copy the database hierarchy to an Fl_Tree browser from this node down.
- */
-char Fl_Preferences::copyTo(Fl_Tree *tree)
-{
-  if (!tree->root())
-    tree->add(name());
-  return node->copyTo(tree, tree->root());
 }
 
 
@@ -677,8 +689,13 @@ static char *decodeText( const char *src )
   const char *s = src;
   for ( ; *s; s++, len++ )
   {
-    if ( *s == '\\' )
-      if ( isdigit( s[1] ) ) s+=3; else s+=1;
+    if ( *s == '\\' ) {
+      if ( isdigit( s[1] ) ) {
+        s+=3; 
+      } else { 
+        s+=1;
+      }
+    }
   }
   char *dst = (char*)malloc( len+1 ), *d = dst;
   for ( s = src; *s; s++ )
@@ -1252,9 +1269,9 @@ int Fl_Preferences::RootNode::read()
   if ( !f )
     return -1;
 
-  fgets( buf, 1024, f );
-  fgets( buf, 1024, f );
-  fgets( buf, 1024, f );
+  if (fgets( buf, 1024, f )==0) { /* ignore */ }
+  if (fgets( buf, 1024, f )==0) { /* ignore */ }
+  if (fgets( buf, 1024, f )==0) { /* ignore */ }
   Node *nd = prefs_->node;
   for (;;)
   {
@@ -1762,28 +1779,6 @@ void Fl_Preferences::Node::deleteIndex() {
   indexed_ = 0;
 }
 
-char Fl_Preferences::Node::copyTo(Fl_Tree *tree, Fl_Tree_Item *ti)
-{
-  ti->label(name());
-  ti->user_data(this);
-  Node *nd = child_;
-  for ( ; nd; nd = nd->next_) {
-    Fl_Tree_Item *tic = tree->insert(ti, 0, 0);
-    nd->copyTo(tree, tic);
-    tic->close();
-  }
-  int i, n = nEntry_;
-  for (i=0; i<n; i++) {
-    char buf[80];
-    const char *name = entry_[i].name;
-    const char *value = entry_[i].value;
-    fl_snprintf(buf, 80, "%s: %s", name, value);
-    tree->add(ti, buf);
-  }
-  return 0;
-}
-
-
 /**
  * \brief Create a plugin.
  *
@@ -1975,5 +1970,5 @@ int Fl_Plugin_Manager::loadAll(const char *filepath, const char *pattern)
 
 
 //
-// End of "$Id: Fl_Preferences.cxx 7415 2010-04-03 13:03:43Z manolo $".
+// End of "$Id: Fl_Preferences.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Printer.H 7617 2010-05-27 17:20:18Z manolo $"
+// "$Id: Fl_Printer.H 7894 2010-11-26 10:22:40Z manolo $"
 //
 // Printing support for the Fast Light Tool Kit (FLTK).
 //
@@ -45,6 +45,7 @@
 /**
  \brief Print support under MSWindows and Mac OS X.
 *
+ Class Fl_System_Printer is implemented only on the MSWindows and Mac OS X platforms.
  Use Fl_Printer instead that is cross-platform and has the same API.
  Fl_Printer is typedef'ed to Fl_System_Printer under MSWindows and Mac OS X. 
  */
@@ -52,7 +53,7 @@ class Fl_System_Printer : public Fl_Paged_Device {
 private:
   /** \brief the printer's graphics context, if there's one, NULL otherwise */
   void *gc; 
-  void set_current();
+  void set_current(void);
 #ifdef __APPLE__
   float scale_x;
   float scale_y;
@@ -115,7 +116,6 @@ public:
 #endif // FL_DOXYGEN
 }; // class Fl_System_Printer
 
-/**  \brief OS-independant class name */
 typedef Fl_System_Printer Fl_Printer;
 #endif
   
@@ -123,12 +123,11 @@ typedef Fl_System_Printer Fl_Printer;
 /**
  \brief Print support under Unix/Linux.
  *
+ Class Fl_PostScript_Printer is implemented only on the Unix/Linux platform.
  Use Fl_Printer instead that is cross-platform and has the same API.
  Fl_Printer is typedef'ed to Fl_PostScript_Printer under Unix/Linux. 
  */
 class Fl_PostScript_Printer : public Fl_PostScript_File_Device {
-private:
-  void set_current();
 public:
   static const char *device_type;
   int start_job(int pages, int *firstpage = NULL, int *lastpage = NULL);
@@ -156,7 +155,6 @@ public:
 #endif // FL_DOXYGEN
 };
 
-/**  \brief OS-independant class name */
 typedef Fl_PostScript_Printer Fl_Printer;
 #endif
 
@@ -166,9 +164,9 @@ typedef Fl_PostScript_Printer Fl_Printer;
  Fl_Printer allows to use all FLTK drawing, color, text, and clip functions, and to have them operate
  on printed page(s). There are two main, non exclusive, ways to use it.
  <ul><li>Print any widget (standard, custom, Fl_Window, Fl_Gl_Window) as it appears 
- on screen, with optional translation and scaling. This is done by calling print_widget() 
+ on screen, with optional translation, scaling and rotation. This is done by calling print_widget() 
  or print_window_part().
- <li>Use a series of FLTK graphics commands (e.g., font, text, lines, colors, clip) to
+ <li>Use a series of FLTK graphics commands (e.g., font, text, lines, colors, clip, image) to
  compose a page appropriately shaped for printing. 
  </ul>
  In both cases, begin by start_job(), start_page(), printable_rect() and origin() calls
@@ -178,16 +176,16 @@ typedef Fl_PostScript_Printer Fl_Printer;
  and to Fl_System_Printer otherwise. Both classes have the same API.
  <ul>
  <li>Unix/Linux platforms:
+ Class Fl_RGB_Image prints but loses its transparency if it has one.
+ See class Fl_PostScript_Graphics_Driver for a description of how UTF-8 strings appear in print.
  Use the static public attributes of this class to set the print dialog to other languages 
  than English. For example, the "Printer:" dialog item Fl_Printer::dialog_printer can be set to French with:
  \code
  Fl_Printer::dialog_printer = "Imprimante:";
- Fl_Printer myprinter;
- myprinter.start_job();
  \endcode
+ before creation of the Fl_Printer object.
  Use Fl_PostScript_File_Device::file_chooser_title to customize the title of the file chooser dialog that opens
  when using the "Print To File" option of the print dialog. 
- Class Fl_RGB_Image prints but loses its transparency if it has one.
  <li>MSWindows platform: Transparent Fl_RGB_Image 's don't print with exact transparency on most printers.
  Fl_RGB_Image 's don't rotate() well.
  A workaround is to use the print_window_part() call. 
@@ -199,6 +197,7 @@ typedef Fl_PostScript_Printer Fl_Printer;
 class Fl_Printer : public Fl_System_Printer, Fl_PostScript_Printer {
 public:
   static const char *device_type;
+  /** @brief The constructor */
   Fl_Printer(void);
   int start_job(int pagecount, int *frompage = NULL, int *topage = NULL);
   int start_page(void);
@@ -211,6 +210,7 @@ public:
   void untranslate(void);
   int end_page (void);
   void end_job (void);
+  /** @brief The destructor */
   ~Fl_Printer(void);
  
   /** \name These attributes are effective under the Xlib platform only.
@@ -264,5 +264,5 @@ public:
 #endif // Fl_Printer_H
 
 //
-// End of "$Id: Fl_Printer.H 7617 2010-05-27 17:20:18Z manolo $"
+// End of "$Id: Fl_Printer.H 7894 2010-11-26 10:22:40Z manolo $"
 //

@@ -1,9 +1,9 @@
 //
-// "$Id: fl_cursor.cxx 7351 2010-03-29 10:35:00Z matt $"
+// "$Id: fl_cursor.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Mouse cursor support for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -120,7 +120,7 @@ void Fl_Window::cursor(Fl_Cursor c, Fl_Color c1, Fl_Color c2) {
     }
     i->cursor = LoadCursor(NULL, n);
   }
-//  SetCursor(i->cursor);
+  SetCursor(i->cursor);
 }
 
 #elif defined(__APPLE__)
@@ -176,14 +176,14 @@ CGContextRef CreateWatchImage(void)
   fl_color(FL_WHITE);
   fl_circle(0, 0, r+1);
   fl_color(FL_BLACK);
-  fl_rectf(-r*0.7, -r*1.7, 1.4*r, 3.4*r);
+  fl_rectf(int(-r*0.7), int(-r*1.7), int(1.4*r), int(3.4*r));
   fl_rectf(r-1, -1, 3, 3);
   fl_color(FL_WHITE);
   fl_pie(-r, -r, 2*r, 2*r, 0, 360);
   fl_color(FL_BLACK);
   fl_circle(0,0,r);
-  fl_xyline(0, 0, -r*.7);
-  fl_xyline(0, 0, 0, -r*.7);
+  fl_xyline(0, 0, int(-r*.7));
+  fl_xyline(0, 0, 0, int(-r*.7));
   fl_end_offscreen();
   return (CGContextRef)off;
 }
@@ -333,5 +333,5 @@ void Fl_Window::cursor(Fl_Cursor c, Fl_Color fg, Fl_Color bg) {
 #endif
 
 //
-// End of "$Id: fl_cursor.cxx 7351 2010-03-29 10:35:00Z matt $".
+// End of "$Id: fl_cursor.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

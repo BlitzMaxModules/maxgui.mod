@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_PostScript.H 7622 2010-05-27 17:50:51Z manolo $"
+// "$Id: Fl_PostScript.H 7719 2010-10-12 09:25:37Z manolo $"
 //
 // Support for graphics output to PostScript file for the Fast Light Tool Kit (FLTK).
 //
@@ -40,9 +40,28 @@
 /**
  \brief PostScript graphical backend.
  *
- PostScript text output is presently implemented only for the latin character set.
- FLTK's standard fonts are output using PostScript's standard fonts: Helvetica, Courier, 
- Times (and their bold, oblique, italic variants), Symbol, ZapfDingbats.
+ PostScript text uses vectorial fonts for the latin alphabet (exactly: all unicode
+ characters between U+0020 and U+017F, that is, ASCII, Latin-1 Supplement and Latin Extended-A charts)
+ plus a few other characters:
+ <table>
+ <tr> <th>Char</th><th>Codepoint</th><th>Name</th>  <th>Char</th><th>Codepoint</th><th>Name</th> <th>Char</th><th>Codepoint</th><th>Name</th></tr>
+ <tr><td>ƒ</td><td>U+0192</td><td>florin</td><td>‚</td><td>U+201A</td><td>quotesinglbase</td><td>™</td><td>U+2122</td><td>trademark</td></tr>
+ <tr><td>ˆ</td><td>U+02C6</td><td>circumflex</td><td>“</td><td>U+201C</td><td>quotedblleft</td><td>∂</td><td>U+2202</td><td>partialdiff</td></tr>
+ <tr><td>ˇ</td><td>U+02C7</td><td>caron</td><td>”</td><td>U+201D</td><td>quotedblright</td><td>Δ</td><td>U+2206</td><td>Delta</td></tr>
+ <tr><td>˘</td><td>U+02D8</td><td>breve</td><td>„</td><td>U+201E</td><td>quotedblbase</td><td>∑</td><td>U+2211</td><td>summation</td></tr>
+ <tr><td>˙</td><td>U+02D9</td><td>dotaccent</td><td>†</td><td>U+2020</td><td>dagger</td><td>√</td><td>U+221A</td><td>radical</td></tr>
+ <tr><td>˚</td><td>U+02DA</td><td>ring</td><td>‡</td><td>U+2021</td><td>daggerdbl</td><td>∞</td><td>U+221E</td><td>infinity</td></tr>
+ <tr><td>˛</td><td>U+02DB</td><td>ogonek</td><td>•</td><td>U+2022</td><td>bullet</td><td>≠</td><td>U+2260</td><td>notequal</td></tr>
+ <tr><td>˜</td><td>U+02DC</td><td>tilde</td><td>…</td><td>U+2026</td><td>ellipsis</td><td>≤</td><td>U+2264</td><td>lessequal</td></tr>
+ <tr><td>˝</td><td>U+02DD</td><td>hungarumlaut</td><td>‰</td><td>U+2030</td><td>perthousand</td><td>≥</td><td>U+2265</td><td>greaterequal</td></tr>
+ <tr><td>–</td><td>U+2013</td><td>endash</td><td>‹</td><td>U+2039</td><td>guilsinglleft</td><td>◊</td><td>U+25CA</td><td>lozenge</td></tr>
+ <tr><td>—</td><td>U+2014</td><td>emdash</td><td>›</td><td>U+203A</td><td>guilsinglright</td><td>ﬁ</td><td>U+FB01</td><td>fi</td></tr>
+ <tr><td>‘</td><td>U+2018</td><td>quoteleft</td><td>/</td><td>U+2044</td><td>fraction</td><td>ﬂ</td><td>U+FB02</td><td>fl</td></tr>
+ <tr><td>’</td><td>U+2019</td><td>quoteright</td><td>€</td><td>U+20AC</td><td>Euro</td><td></td><td>U+F8FF</td><td>apple (Mac OS only)</td></tr>
+ </table>
+ <br> All other unicode characters are output as a bitmap.
+ <br> FLTK standard fonts are output using PostScript standard fonts: Helvetica, Courier, 
+ Times (and their bold, oblique, italic variants).
  */
 class Fl_PostScript_Graphics_Driver : public Fl_Graphics_Driver {
 public: 
@@ -109,7 +128,6 @@ class Clip {
   int lang_level_;
   int font_;
   int size_;
-  Fl_Color color_;
   int gap_;
   int pages_;
   
@@ -164,9 +182,7 @@ class Clip {
   char *ps_filename_;
   // implementation of drawing methods
   void color(Fl_Color c);
-  //void bg_color(Fl_Color bg);
   void color(uchar r, uchar g, uchar b);
-  Fl_Color color(){return color_;};
   
   void push_clip(int x, int y, int w, int h);
   int clip_box(int x, int y, int w, int h, int &X, int &Y, int &W, int &H);
@@ -227,11 +243,7 @@ class Clip {
   void draw_image_mono(const uchar* d, int x,int y,int w,int h, int delta=1, int ld=0){draw_scaled_image_mono(d,x,y,w,h,w,h,delta,ld);};
   void draw_image(Fl_Draw_Image_Cb call, void* data, int x,int y, int w, int h, int delta=3){draw_scaled_image(call,data, x, y, w, h, w, h, delta);};
   void draw_image_mono(Fl_Draw_Image_Cb call, void* data, int x,int y, int w, int h, int delta=1){draw_scaled_image_mono(call, data, x, y, w, h, w, h, delta);};
-  
-  void draw(Fl_Pixmap * pxm,int XP, int YP, int WP, int HP, int cx, int cy);
-  void draw(Fl_RGB_Image * rgb,int XP, int YP, int WP, int HP, int cx, int cy);
-  void draw(Fl_Bitmap * bitmap,int XP, int YP, int WP, int HP, int cx, int cy);
-    
+      
 public:
   void page_policy(int p);
   int page_policy(){return page_policy_;};
@@ -249,6 +261,9 @@ public:
   void place(double x, double y, double tx, double ty, double scale = 1);
 #endif // FL_DOXYGEN
   Fl_PostScript_Graphics_Driver();
+  void draw(Fl_Pixmap * pxm,int XP, int YP, int WP, int HP, int cx, int cy);
+  void draw(Fl_Bitmap * bitmap,int XP, int YP, int WP, int HP, int cx, int cy);
+  void draw(Fl_RGB_Image * rgb,int XP, int YP, int WP, int HP, int cx, int cy);
   ~Fl_PostScript_Graphics_Driver();
 };
 
@@ -289,5 +304,5 @@ public:
 #endif // Fl_PostScript_H
 
 //
-// End of "$Id: Fl_PostScript.H 7622 2010-05-27 17:50:51Z manolo $"
+// End of "$Id: Fl_PostScript.H 7719 2010-10-12 09:25:37Z manolo $"
 //

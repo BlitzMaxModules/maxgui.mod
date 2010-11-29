@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Device.cxx 7617 2010-05-27 17:20:18Z manolo $"
+// "$Id: Fl_Device.cxx 7659 2010-07-01 13:21:32Z manolo $"
 //
 // implementation of Fl_Device class for the Fast Light Tool Kit (FLTK).
 //
@@ -47,10 +47,10 @@ const char *Fl_Xlib_Graphics_Driver::device_type = "Fl_Xlib_Graphics_Driver";
 /** \brief Use this drawing surface for future graphics requests. */
 void Fl_Surface_Device::set_current(void)
 {
-  fl_device = _driver;
+  fl_graphics_driver = _driver;
   fl_surface = this;
 }
 
 //
-// End of "$Id: Fl_Device.cxx 7617 2010-05-27 17:20:18Z manolo $".
+// End of "$Id: Fl_Device.cxx 7659 2010-07-01 13:21:32Z manolo $".
 //

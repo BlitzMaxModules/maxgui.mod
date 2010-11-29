@@ -1,9 +1,9 @@
 //
-// "$Id: filename_list.cxx 6986 2010-01-01 18:30:49Z greg.ercolano $"
+// "$Id: filename_list.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Filename list routines for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -83,7 +83,7 @@ int fl_filename_list(const char *d, dirent ***list,
                      Fl_File_Sort_F *sort) {
 #ifndef HAVE_SCANDIR
   int n = scandir(d, list, 0, sort);
-#elif defined(HAVE_SCANDIR_POSIX)
+#elif defined(HAVE_SCANDIR_POSIX) && !defined(__APPLE__)
   // POSIX (2008) defines the comparison function like this:
   int n = scandir(d, list, 0, (int(*)(const dirent **, const dirent **))sort);
 #elif defined(__osf__)
@@ -132,5 +132,5 @@ int fl_filename_list(const char *d, dirent ***list,
 }
 
 //
-// End of "$Id: filename_list.cxx 6986 2010-01-01 18:30:49Z greg.ercolano $".
+// End of "$Id: filename_list.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

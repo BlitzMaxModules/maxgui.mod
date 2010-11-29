@@ -1,5 +1,5 @@
 //
-// "$Id: fl_dnd_mac.cxx 7563 2010-04-28 03:15:47Z greg.ercolano $"
+// "$Id: fl_dnd_mac.cxx 7892 2010-11-25 18:21:21Z manolo $"
 //
 // Drag & Drop code for the Fast Light Tool Kit (FLTK).
 //
@@ -33,10 +33,6 @@
 #include <FL/x.H>
 #include <FL/Fl_Window.H>
 
-// warning: this function is only implemented in Quickdraw. The function
-//          below may not work if FLTK is compiled with Quartz enabled
-
-extern EventRef fl_os_event;
 extern char *fl_selection_buffer;
 extern int fl_selection_length;
 
@@ -54,5 +50,5 @@ int Fl::dnd()
   
 
 //
-// End of "$Id: fl_dnd_mac.cxx 7563 2010-04-28 03:15:47Z greg.ercolano $".
+// End of "$Id: fl_dnd_mac.cxx 7892 2010-11-25 18:21:21Z manolo $".
 //

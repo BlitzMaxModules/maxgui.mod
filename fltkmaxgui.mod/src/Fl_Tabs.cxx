@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Tabs.cxx 7162 2010-02-26 21:10:46Z matt $"
+// "$Id: Fl_Tabs.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Tab widget for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -117,12 +117,20 @@ Fl_Widget *Fl_Tabs::which(int event_x, int event_y) {
     if (event_y > y()+H || event_y < y()) return 0;
   }
   if (event_x < x()) return 0;
-  int p[128], wp[128];
+  Fl_Widget *ret = 0L;
+  int nc = children();
+  int *p  = (int*)malloc((nc+1)*sizeof(int));
+  int *wp = (int*)malloc((nc+1)*sizeof(int));
   tab_positions(p, wp);
   for (int i=0; i<children(); i++) {
-    if (event_x < x()+p[i+1]) return child(i);
+    if (event_x < x()+p[i+1]) {
+      ret = child(i);
+      break;
+    }
   }
-  return 0;
+  free(p);
+  free(wp);
+  return ret;
 }
 
 void Fl_Tabs::redraw_tabs()
@@ -246,7 +254,7 @@ int Fl_Tabs::handle(int event) {
 
 int Fl_Tabs::push(Fl_Widget *o) {
   if (push_ == o) return 0;
-  if (push_ && !push_->visible() || o && !o->visible())
+  if ( (push_ && !push_->visible()) || (o && !o->visible()) )
     redraw_tabs();
   push_ = o;
   return 1;
@@ -318,7 +326,9 @@ void Fl_Tabs::draw() {
     if (v) update_child(*v);
   }
   if (damage() & (FL_DAMAGE_SCROLL|FL_DAMAGE_ALL)) {
-    int p[128]; int wp[128];
+    int nc = children();
+    int *p  = (int*)malloc((nc+1)*sizeof(int));
+    int *wp = (int*)malloc((nc+1)*sizeof(int));
     int selected = tab_positions(p,wp);
     int i;
     Fl_Widget*const* a = array();
@@ -330,6 +340,8 @@ void Fl_Tabs::draw() {
       i = selected;
       draw_tab(x()+p[i], x()+p[i+1], wp[i], H, a[i], SELECTED);
     }
+    free(p);
+    free(wp);
   }
 }
 
@@ -405,13 +417,17 @@ void Fl_Tabs::draw_tab(int x1, int x2, int W, int H, Fl_Widget* o, int what) {
     Creates a new Fl_Tabs widget using the given position, size,
     and label string. The default boxtype is FL_THIN_UP_BOX.
 
-    <P>Use add(Fl_Widget
-    *) to add each child, which are usually
+    Use add(Fl_Widget*) to add each child, which are usually
     Fl_Group widgets. The children should be sized to stay
     away from the top or bottom edge of the Fl_Tabs widget,
     which is where the tabs will be drawn.
 
-    <P>The destructor <I>also deletes all the children</I>. This
+    All children of Fl_Tab should have the same size and exactly fit on top of 
+    each other. They should only leave space above or below where that tabs will 
+    go, but not on the sides. If the first child of Fl_Tab is set to 
+    "resizable()", the riders will not resize when the tabs are resized.
+ 
+    The destructor <I>also deletes all the children</I>. This
     allows a whole tree to be deleted at once, without having to
     keep a pointer to all the children in the user code. A kludge
     has been done so the Fl_Tabs and all of its children
@@ -426,5 +442,5 @@ Fl_Tabs::Fl_Tabs(int X,int Y,int W, int H, const char *l) :
 }
 
 //
-// End of "$Id: Fl_Tabs.cxx 7162 2010-02-26 21:10:46Z matt $".
+// End of "$Id: Fl_Tabs.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

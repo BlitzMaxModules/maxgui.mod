@@ -1,11 +1,11 @@
 //
-// "$Id: Fl_File_Icon2.cxx 6616 2009-01-01 21:28:26Z matt $"
+// "$Id: Fl_File_Icon2.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Fl_File_Icon system icon routines.
 //
 // KDE icon code donated by Maarten De Boer.
 //
-// Copyright 1999-2009 by Michael Sweet.
+// Copyright 1999-2010 by Michael Sweet.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -853,7 +853,7 @@ load_kde_mimelnk(const char *filename,	// I - mimelnk filename
   pattern[0]      = '\0';
   iconfilename[0] = '\0';
 
-  if ((fp = fopen(filename, "rb")) != NULL) {
+  if ((fp = fl_fopen(filename, "rb")) != NULL) {
     while (fgets(tmp, sizeof(tmp), fp)) {
       if ((val = get_kde_val(tmp, "Icon")) != NULL)
 	strlcpy(iconfilename, val, sizeof(iconfilename));
@@ -1018,5 +1018,5 @@ get_kde_val(char       *str,
 
 
 //
-// End of "$Id: Fl_File_Icon2.cxx 6616 2009-01-01 21:28:26Z matt $".
+// End of "$Id: Fl_File_Icon2.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

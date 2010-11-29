@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_GDI_Printer.cxx 7617 2010-05-27 17:20:18Z manolo $"
+// "$Id: Fl_GDI_Printer.cxx 7659 2010-07-01 13:21:32Z manolo $"
 //
 // Support for WIN32 printing for the Fast Light Tool Kit (FLTK).
 //
@@ -37,7 +37,7 @@ extern HWND fl_window;
 Fl_Printer::Fl_System_Printer(void) : Fl_Paged_Device() {
   hPr = NULL;
   type_ = device_type;
-  driver(fl_device);
+  driver(fl_graphics_driver);
 }
 
 Fl_Printer::~Fl_System_Printer(void) {
@@ -282,5 +282,5 @@ void Fl_Printer::untranslate (void)
 #endif // WIN32
 
 //
-// End of "$Id: Fl_GDI_Printer.cxx 7617 2010-05-27 17:20:18Z manolo $".
+// End of "$Id: Fl_GDI_Printer.cxx 7659 2010-07-01 13:21:32Z manolo $".
 //

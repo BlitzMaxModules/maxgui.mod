@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Tree_Prefs.cxx 6956 2009-12-08 08:06:44Z greg.ercolano $"
+// "$Id: Fl_Tree_Prefs.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 
 #include <FL/Fl.H>
@@ -12,7 +12,7 @@
 //////////////////////
 //
 // Fl_Tree -- This file is part of the Fl_Tree widget for FLTK
-// Copyright (C) 2009 by Greg Ercolano.
+// Copyright (C) 2009-2010 by Greg Ercolano.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -34,6 +34,22 @@
 //    These can be replaced via prefs.openicon()/closeicon()
 //
 static const char *L_open_xpm[] = {
+#ifdef __APPLE__
+  "11 11 2 1",
+  ".  c None",
+  "@  c #000000",
+  "...@.......",
+  "...@@......",
+  "...@@@.....",
+  "...@@@@....",
+  "...@@@@@...",
+  "...@@@@@@..",
+  "...@@@@@...",
+  "...@@@@....",
+  "...@@@.....",
+  "...@@......",
+  "...@......."
+#else
   "11 11 3 1",
   ".	c #fefefe",
   "#	c #444444",
@@ -48,10 +64,28 @@ static const char *L_open_xpm[] = {
   "#....@....#",
   "#.........#",
   "#.........#",
-  "###########"};
+  "###########"
+#endif
+};
 static Fl_Pixmap L_openpixmap(L_open_xpm);
 
 static const char *L_close_xpm[] = {
+#ifdef __APPLE__
+  "11 11 2 1",
+  ".  c None",
+  "@  c #000000",
+  "...........",
+  "...........",
+  "...........",
+  "...........",
+  "...........",
+  "@@@@@@@@@@@",
+  ".@@@@@@@@@.",
+  "..@@@@@@@..",
+  "...@@@@@...",
+  "....@@@....",
+  ".....@....."
+#else
   "11 11 3 1",
   ".	c #fefefe",
   "#	c #444444",
@@ -66,7 +100,9 @@ static const char *L_close_xpm[] = {
   "#.........#",
   "#.........#",
   "#.........#",
-  "###########"};
+  "###########"
+#endif
+};
 static Fl_Pixmap L_closepixmap(L_close_xpm);
 
 /// Sets the default icon to be used as the 'open' icon
@@ -105,7 +141,11 @@ Fl_Tree_Prefs::Fl_Tree_Prefs() {
   _selectcolor            = FL_DARK_BLUE;
   _inactivecolor          = FL_GRAY;
   _connectorcolor         = Fl_Color(43);
+#ifdef __APPLE__
+  _connectorstyle         = FL_TREE_CONNECTOR_NONE;
+#else
   _connectorstyle         = FL_TREE_CONNECTOR_DOTTED;
+#endif
   _openimage              = &L_openpixmap;
   _closeimage             = &L_closepixmap;
   _userimage              = 0;
@@ -126,5 +166,5 @@ Fl_Tree_Prefs::Fl_Tree_Prefs() {
 }
 
 //
-// End of "$Id: Fl_Tree_Prefs.cxx 6956 2009-12-08 08:06:44Z greg.ercolano $".
+// End of "$Id: Fl_Tree_Prefs.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

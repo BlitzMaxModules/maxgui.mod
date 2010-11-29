@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_lock.cxx 6787 2009-05-14 20:16:09Z engelsman $"
+// "$Id: Fl_lock.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Multi-threading support code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -304,7 +304,7 @@ static void unlock_function_rec() {
 #  endif // PTHREAD_MUTEX_RECURSIVE
 
 void Fl::awake(void* msg) {
-  write(thread_filedes[1], &msg, sizeof(void*));
+  if (write(thread_filedes[1], &msg, sizeof(void*))==0) { /* ignore */ }
 }
 
 static void* thread_message_;
@@ -315,7 +315,9 @@ void* Fl::thread_message() {
 }
 
 static void thread_awake_cb(int fd, void*) {
-  read(fd, &thread_message_, sizeof(void*));
+  if (read(fd, &thread_message_, sizeof(void*))==0) { 
+    /* This should never happen */
+  }
   Fl_Awake_Handler func;
   void *data;
   while (Fl::get_awake_handler_(func, data)==0) {
@@ -331,7 +333,9 @@ void Fl::lock() {
   if (!thread_filedes[1]) {
     // Initialize thread communication pipe to let threads awake FLTK
     // from Fl::wait()
-    pipe(thread_filedes);
+    if (pipe(thread_filedes)==-1) {
+      /* this should not happen */
+    }
 
     // Make the write side of the pipe non-blocking to avoid deadlock
     // conditions (STR #1537)
@@ -395,5 +399,5 @@ void Fl::awake(void*) {
 #endif // WIN32
 
 //
-// End of "$Id: Fl_lock.cxx 6787 2009-05-14 20:16:09Z engelsman $".
+// End of "$Id: Fl_lock.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

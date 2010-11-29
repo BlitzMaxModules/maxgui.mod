@@ -9,7 +9,7 @@ Import pub.zlib
 Import pub.libpng
 'Import pub.libjpeg
 
-ModuleInfo "Version: 1.57"
+ModuleInfo "Version: 1.58"
 ModuleInfo "Author: Simon Armstrong, Seb Hollington"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd."
@@ -17,6 +17,8 @@ ModuleInfo "Copyright: Blitz Research Ltd."
 ModuleInfo "Credit: FLTKMaxGUI is based in part on the work of the FLTK project (http://www.fltk.org)."
 ModuleInfo "Credit: FLTKMaxGUI also uses the fantastic FLTK Utility Widgets from http://www.osc.edu/archive/FLU/ ."
 
+ModuleInfo "History: 1.58 Release"
+ModuleInfo "History: Updated FLTK library to FLTK 1.3.x r7907 with numerous fixes (e.g. shortcut + caps lock problem)."
 ModuleInfo "History: 1.57 Release"
 ModuleInfo "History: Added RemoveColor implementation."
 ModuleInfo "History: Modified license."

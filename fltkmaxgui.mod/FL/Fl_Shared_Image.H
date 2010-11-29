@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Shared_Image.H 7505 2010-04-14 20:47:34Z manolo $"
+// "$Id: Fl_Shared_Image.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Shared image header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -106,5 +106,5 @@ FL_EXPORT extern void fl_register_images();
 #endif // !Fl_Shared_Image_H
 
 //
-// End of "$Id: Fl_Shared_Image.H 7505 2010-04-14 20:47:34Z manolo $"
+// End of "$Id: Fl_Shared_Image.H 7903 2010-11-28 21:06:39Z matt $"
 //

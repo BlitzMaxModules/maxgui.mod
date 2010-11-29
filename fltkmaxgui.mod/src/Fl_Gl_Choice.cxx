@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Gl_Choice.cxx 7351 2010-03-29 10:35:00Z matt $"
+// "$Id: Fl_Gl_Choice.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // OpenGL visual selection code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -349,11 +349,21 @@ void fl_set_gl_context(Fl_Window* w, GLContext context) {
       aglSetInteger( context, AGL_BUFFER_RECT, rect );
       aglEnable( context, AGL_BUFFER_RECT );
     }
-#     if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-  aglSetWindowRef(context, MACwindowRef(w) );
-#     else
-  aglSetDrawable( context, GetWindowPort( MACwindowRef(w) ) );
-#     endif
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
+#if __LP64__
+    // 64 bit version
+    aglSetWindowRef(context, MACwindowRef(w) );
+#else
+    // 32 bit version >= 10.5
+    if (aglSetWindowRef != NULL)
+      aglSetWindowRef(context, MACwindowRef(w) );
+    else
+      aglSetDrawable( context, GetWindowPort( MACwindowRef(w) ) );
+#endif
+#else
+    // 32 bit version < 10.5
+    aglSetDrawable( context, GetWindowPort( MACwindowRef(w) ) );
+#endif
     aglSetCurrentContext(context);
 #  else
 #   error unsupported platform
@@ -370,12 +380,13 @@ void fl_no_gl_context() {
   wglMakeCurrent(0, 0);
 #  elif defined(__APPLE_QUARTZ__)
   // warning: the Quartz version should probably use Core GL (CGL) instead of AGL
-  AGLContext ctx = aglGetCurrentContext();
-#   if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
-  if (ctx) aglSetWindowRef(ctx, NULL);
-#    else
-  if (ctx) aglSetDrawable(ctx, NULL);
-#    endif
+  AGLContext ctx = aglGetCurrentContext();  
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
+  if (aglSetWindowRef != NULL)
+    { if(ctx) aglSetWindowRef(ctx, NULL ); }
+  else
+#endif
+  if(ctx) aglSetDrawable( ctx, NULL );
   aglSetCurrentContext(0);
 #  else
 #    error unsupported platform
@@ -401,5 +412,5 @@ void fl_delete_gl_context(GLContext context) {
 
 
 //
-// End of "$Id: Fl_Gl_Choice.cxx 7351 2010-03-29 10:35:00Z matt $".
+// End of "$Id: Fl_Gl_Choice.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

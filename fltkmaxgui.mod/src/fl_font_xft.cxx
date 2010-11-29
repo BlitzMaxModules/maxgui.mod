@@ -1,5 +1,5 @@
 //
-// "$Id: fl_font_xft.cxx 7652 2010-06-21 15:49:45Z manolo $"
+// "$Id: fl_font_xft.cxx 7855 2010-11-15 22:13:13Z matt $"
 //
 // Xft font code for the Fast Light Tool Kit (FLTK).
 //
@@ -69,6 +69,7 @@
 
 // The predefined fonts that FLTK has:
 static Fl_Fontdesc built_in_table[] = {
+#if 1
 {" sans"},
 {"Bsans"},
 {"Isans"},
@@ -84,7 +85,25 @@ static Fl_Fontdesc built_in_table[] = {
 {" symbol"},
 {" screen"},
 {"Bscreen"},
-{" dingbats"},
+{" zapf dingbats"},
+#else
+{" helvetica"},
+{"Bhelvetica"},
+{"Ihelvetica"},
+{"Phelvetica"},
+{" courier"},
+{"Bcourier"},
+{"Icourier"},
+{"Pcourier"},
+{" times"},
+{"Btimes"},
+{"Itimes"},
+{"Ptimes"},
+{" symbol"},
+{" lucidatypewriter"},
+{"Blucidatypewriter"},
+{" zapf dingbats"},
+#endif
 };
 
 Fl_Fontdesc* fl_fonts = built_in_table;
@@ -270,6 +289,20 @@ static XftFont* fontopen(const char* name, bool core, int angle) {
     free(picked_name);
 #endif
 
+    if (!match_pat) {
+      // last chance, just open any font in the right size
+      the_font = XftFontOpen (fl_display, fl_screen,
+                        XFT_FAMILY, XftTypeString, "sans",
+                        XFT_SIZE, XftTypeDouble, (double)fl_size_,
+                        NULL);
+      XftPatternDestroy(fnt_pat);
+      if (!the_font) {
+        Fl::error("Unable to find fonts. Check your FontConfig configuration.\n");
+        exit(1);
+      }
+      return the_font;
+    }
+
     // open the matched font
     the_font = XftFontOpenPattern(fl_display, match_pat);
 
@@ -399,31 +432,48 @@ static XFontStruct* load_xfont_for_xft2(void) {
   int size = fl_size_;
   const char *wt_med = "medium";
   const char *wt_bold = "bold";
-  char *weight = (char *)wt_med; // no specifc weight requested - accept any
+  const char *weight = wt_med; // no specifc weight requested - accept any
   char slant = 'r';   // regular non-italic by default
   char xlfd[128];     // we will put our synthetic XLFD in here
   char *pc = strdup(fl_fonts[fl_font_].name); // what font were we asked for?
-  char *name = pc;    // keep a handle to the original name for freeing later
+  const char *name = pc;    // keep a handle to the original name for freeing later
   // Parse the "fltk-name" of the font
   switch (*name++) {
-  case 'I': slant = 'i'; break;     // italic
-  case 'P': slant = 'i';            // bold-italic (falls-through)
-  case 'B': weight = (char*)wt_bold; break; // bold
-  case ' ': break;                  // regular
-  default: name--;                  // no prefix, restore name
+  case 'I': slant = 'i'; break;       // italic
+  case 'P': slant = 'i';              // bold-italic (falls-through)
+  case 'B': weight = wt_bold; break;  // bold
+  case ' ': break;                    // regular
+  default: name--;                    // no prefix, restore name
   }
 
   // first, we do a query with no prefered size, to see if the font exists at all
-  snprintf(xlfd, 128, "-*-*%s*-%s-%c-*--*-*-*-*-*-*-*-*", name, weight, slant); // make up xlfd style name
+  snprintf(xlfd, 128, "-*-%s-%s-%c-*--*-*-*-*-*-*-*-*", name, weight, slant); // make up xlfd style name
   xgl_font = XLoadQueryFont(fl_display, xlfd);
   if(xgl_font) { // the face exists, but can we get it in a suitable size?
     XFreeFont(fl_display, xgl_font); // release the non-sized version
-    snprintf(xlfd, 128, "-*-*%s*-%s-%c-*--*-%d-*-*-*-*-*-*", name, weight, slant, (size*10));
+    snprintf(xlfd, 128, "-*-%s-%s-%c-*--*-%d-*-*-*-*-*-*", name, weight, slant, (size*10));
     xgl_font = XLoadQueryFont(fl_display, xlfd); // attempt to load the font at the right size
   }
 //puts(xlfd);
-  free(pc); // release our copy of the font name
 
+  // try alternative names
+  if (!xgl_font) {
+    if (!strcmp(name, "sans")) {
+      name = "helvetica";
+    } else if (!strcmp(name, "mono")) {
+      name = "courier";
+    } else if (!strcmp(name, "serif")) {
+      name = "times";
+    } else if (!strcmp(name, "screen")) {
+      name = "lucidatypewriter";
+    } else if (!strcmp(name, "dingbats")) {
+      name = "zapf dingbats";
+    }
+    snprintf(xlfd, 128, "-*-*%s*-%s-%c-*--*-%d-*-*-*-*-*-*", name, weight, slant, (size*10));
+    xgl_font = XLoadQueryFont(fl_display, xlfd);
+  }  
+  free(pc); // release our copy of the font name
+  
   // if we have nothing loaded, try a generic proportional font
   if(!xgl_font) {
     snprintf(xlfd, 128, "-*-helvetica-*-%c-*--*-%d-*-*-*-*-*-*", slant, (size*10));
@@ -587,7 +637,7 @@ static void fl_drawUCS4(const FcChar32 *str, int n, int x, int y) {
 void Fl_Graphics_Driver::rtl_draw(const char* c, int n, int x, int y) {
 
 #if defined(__GNUC__)
-#warning Need to improve this XFT right to left draw function
+// FIXME: warning Need to improve this XFT right to left draw function
 #endif /*__GNUC__*/
 
 // This actually draws LtoR, but aligned to R edge with the glyph order reversed...
@@ -624,5 +674,5 @@ void Fl_Graphics_Driver::rtl_draw(const char* c, int n, int x, int y) {
 #endif
 
 //
-// End of "$Id: fl_font_xft.cxx 7652 2010-06-21 15:49:45Z manolo $"
+// End of "$Id: fl_font_xft.cxx 7855 2010-11-15 22:13:13Z matt $"
 //

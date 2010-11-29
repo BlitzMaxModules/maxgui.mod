@@ -1,7 +1,7 @@
-/* "$Id: fl_utf8.h 7551 2010-04-20 21:43:31Z engelsman $"
+/* "$Id: fl_utf8.h 7903 2010-11-28 21:06:39Z matt $"
  *
  * Author: Jean-Marc Lienher ( http://oksid.ch )
- * Copyright 2000-2009 by O'ksi'D.
+ * Copyright 2000-2010 by O'ksi'D.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -255,5 +255,5 @@ FL_EXPORT char fl_make_path( const char *path );
 #endif /* _HAVE_FL_UTF8_HDR_ */
 
 /*
- * End of "$Id: fl_utf8.h 7551 2010-04-20 21:43:31Z engelsman $".
+ * End of "$Id: fl_utf8.h 7903 2010-11-28 21:06:39Z matt $".
  */

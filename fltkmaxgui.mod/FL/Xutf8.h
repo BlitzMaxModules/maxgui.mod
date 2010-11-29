@@ -1,7 +1,7 @@
-/* "$Id: Xutf8.h 6942 2009-11-18 12:22:51Z AlbrechtS $"
+/* "$Id: Xutf8.h 7904 2010-11-28 21:12:59Z matt $"
  *
  * Author: Jean-Marc Lienher ( http://oksid.ch )
- * Copyright 2000-2003 by O'ksi'D.
+ * Copyright 2000-2010 by O'ksi'D.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -172,5 +172,5 @@ XUtf8Toupper(
 #endif
 
 /*
- *  End of "$Id: Xutf8.h 6942 2009-11-18 12:22:51Z AlbrechtS $".
+ *  End of "$Id: Xutf8.h 7904 2010-11-28 21:12:59Z matt $".
  */ 

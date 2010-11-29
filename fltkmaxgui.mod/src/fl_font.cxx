@@ -1,9 +1,9 @@
 //
-// "$Id: fl_font.cxx 6779 2009-04-24 09:28:30Z yuri $"
+// "$Id: fl_font.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Font selection code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -87,5 +87,5 @@ void fl_draw(const char* str, int l, float x, float y) {
 }
 #endif
 //
-// End of "$Id: fl_font.cxx 6779 2009-04-24 09:28:30Z yuri $".
+// End of "$Id: fl_font.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

@@ -1,9 +1,9 @@
 //
-// "$Id: Fl.cxx 7354 2010-03-29 11:07:29Z matt $"
+// "$Id: Fl.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Main event handling code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -84,6 +84,10 @@ char		*Fl::e_text = (char *)"";
 int		Fl::e_length;
 int		Fl::visible_focus_ = 1,
 		Fl::dnd_text_ops_ = 1;
+
+unsigned char   Fl::options_[] = { 0, 0 };
+unsigned char   Fl::options_read_ = 0;
+
 
 Fl_Window *fl_xfocus;	// which window X thinks has focus
 Fl_Window *fl_xmousewin;// which window X thinks has FL_ENTER
@@ -484,13 +488,35 @@ int Fl::run() {
 }
 
 #ifdef WIN32
+
+// Function to initialize COM/OLE for usage. This must be done only once.
+// We define a flag to register whether we called it:
+static char oleInitialized = 0;
+
+// This calls the Windows function OleInitialize() exactly once.
+void fl_OleInitialize() {
+  if (!oleInitialized) {
+    OleInitialize(0L);
+    oleInitialized = 1;
+  }
+}
+
+// This calls the Windows function OleUninitialize() only, if
+// OleInitialize has been called before.
+void fl_OleUninitialize() {
+  if (oleInitialized) {
+    OleUninitialize();
+    oleInitialized = 0;
+  }
+}
+
 class Fl_Win32_At_Exit {
 public:
   Fl_Win32_At_Exit() { }
   ~Fl_Win32_At_Exit() {
     fl_free_fonts();        // do some WIN32 cleanup
     fl_cleanup_pens();
-    OleUninitialize();
+    fl_OleUninitialize();
     fl_brush_action(1);
     fl_cleanup_dc_list();
   }
@@ -964,7 +990,7 @@ int Fl::handle(int e, Fl_Window* window)
   switch (e) {
 
   case FL_CLOSE:
-    if (grab() || modal() && window != modal()) return 0;
+    if ( grab() || (modal() && window != modal()) ) return 0;
     wi->do_callback();
     return 1;
 
@@ -1266,6 +1292,9 @@ void Fl_Window::hide() {
 
 Fl_Window::~Fl_Window() {
   hide();
+  if (xclass_) {
+    free(xclass_);
+  }
 }
 
 // FL_SHOW and FL_HIDE are called whenever the visibility of this widget
@@ -1392,16 +1421,36 @@ void Fl_Widget::redraw_label() {
       W += 5; // Add a little to the size of the label to cover overflow
       H += 5;
 
-      if (align() & FL_ALIGN_BOTTOM) {
-	window()->damage(FL_DAMAGE_EXPOSE, x(), y() + h(), w(), H);
-      } else if (align() & FL_ALIGN_TOP) {
-	window()->damage(FL_DAMAGE_EXPOSE, x(), y() - H, w(), H);
-      } else if (align() & FL_ALIGN_LEFT) {
-	window()->damage(FL_DAMAGE_EXPOSE, x() - W, y(), W, h());
-      } else if (align() & FL_ALIGN_RIGHT) {
-	window()->damage(FL_DAMAGE_EXPOSE, x() + w(), y(), W, h());
-      } else {
-        window()->damage(FL_DAMAGE_ALL);
+      // FIXME:
+      // This assumes the measure() returns the correct outline, which it does 
+      // not in all possible cases of alignment combinedwith image and symbols.
+      switch (align() & 0x0f) {
+        case FL_ALIGN_TOP_LEFT:
+          window()->damage(FL_DAMAGE_EXPOSE, x(), y()-H, W, H); break;
+        case FL_ALIGN_TOP:
+          window()->damage(FL_DAMAGE_EXPOSE, x()+(w()-W)/2, y()-H, W, H); break;
+        case FL_ALIGN_TOP_RIGHT:
+          window()->damage(FL_DAMAGE_EXPOSE, x()+w()-W, y()-H, W, H); break;
+        case FL_ALIGN_LEFT_TOP:
+          window()->damage(FL_DAMAGE_EXPOSE, x()-W, y(), W, H); break;
+        case FL_ALIGN_RIGHT_TOP:
+          window()->damage(FL_DAMAGE_EXPOSE, x()+w(), y(), W, H); break;
+        case FL_ALIGN_LEFT:
+          window()->damage(FL_DAMAGE_EXPOSE, x()-W, y()+(h()-H)/2, W, H); break;
+        case FL_ALIGN_RIGHT:
+          window()->damage(FL_DAMAGE_EXPOSE, x()+w(), y()+(h()-H)/2, W, H); break;
+        case FL_ALIGN_LEFT_BOTTOM:
+          window()->damage(FL_DAMAGE_EXPOSE, x()-W, y()+h()-H, W, H); break;
+        case FL_ALIGN_RIGHT_BOTTOM:
+          window()->damage(FL_DAMAGE_EXPOSE, x()+w(), y()+h()-H, W, H); break;
+        case FL_ALIGN_BOTTOM_LEFT:
+          window()->damage(FL_DAMAGE_EXPOSE, x(), y()+h(), W, H); break;
+        case FL_ALIGN_BOTTOM:
+          window()->damage(FL_DAMAGE_EXPOSE, x()+(w()-W)/2, y()+h(), W, H); break;
+        case FL_ALIGN_BOTTOM_RIGHT:
+          window()->damage(FL_DAMAGE_EXPOSE, x()+w()-W, y()+h(), W, H); break;
+        default:
+          window()->damage(FL_DAMAGE_ALL); break;
       }
     } else {
       // The label is inside the widget, so just redraw the widget itself...
@@ -1692,6 +1741,46 @@ void Fl::clear_widget_pointer(Fl_Widget const *w)
   }
 }
 
+
+/**
+ \brief User interface options management.
+ 
+ This function needs to be documented in more detail. It can be used for more
+ optional settings, such as using a native file chooser instead of the FLTK one
+ wherever possible, disabeling tooltips, disabeling visible focus, disabeling 
+ FLTK file chooser preview, etc. .
+ 
+ There should be a command line option interface.
+ 
+ There should be an application that manages options system wide, per user, and
+ per application.
+ */ 
+bool Fl::option(Fl_Option o)
+{
+  if (!options_read_) {
+    int tmp;
+    { // first, read the system wide preferences
+      Fl_Preferences prefs(Fl_Preferences::SYSTEM, "fltk.org", "fltk");
+      Fl_Preferences opt(prefs, "options");
+      prefs.get("ArrowFocus", tmp, 0); options_[OPTION_ARROW_FOCUS] = tmp;
+      prefs.get("NativeFilechooser", tmp, 0); options_[OPTION_NATIVE_FILECHOOSER] = tmp;
+    }
+    { // next, check the user preferences
+      Fl_Preferences prefs(Fl_Preferences::USER, "fltk.org", "fltk");
+      Fl_Preferences opt(prefs, "options");
+      prefs.get("ArrowFocus", tmp, 0); options_[OPTION_ARROW_FOCUS] = tmp;
+      prefs.get("NativeFilechooser", tmp, 0); options_[OPTION_NATIVE_FILECHOOSER] = tmp;
+    }
+    { // now, if the developer has registered this app, we could as for per-application preferences
+    }
+    options_read_ = 1;
+  }
+  if (o<0 || o>=OPTION_LAST) 
+    return false;
+  return (bool)options_[o];
+}
+
+
 // Helper class Fl_Widget_Tracker
 
 /**
@@ -1711,6 +1800,7 @@ Fl_Widget_Tracker::~Fl_Widget_Tracker() {
   Fl::release_widget_pointer(wp_); // remove pointer from watch list
 }
 
+
 //
-// End of "$Id: Fl.cxx 7354 2010-03-29 11:07:29Z matt $".
+// End of "$Id: Fl.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

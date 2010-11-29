@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Widget.H 7469 2010-04-07 23:17:33Z matt $"
+// "$Id: Fl_Widget.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // Widget header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -25,7 +25,7 @@
 //     http://www.fltk.org/str.php
 //
 
-/* \file
+/** \file
    Fl_Widget, Fl_Label classes . */
 
 #ifndef Fl_Widget_H
@@ -752,7 +752,9 @@ public:
       && visible()) but is faster.
       \retval 0 if the widget takes no events
    */ 
-  unsigned int takesevents() const {return !(flags_&(INACTIVE|INVISIBLE|OUTPUT));}
+  unsigned int takesevents() const {
+    return !output() && active_r() && visible_r();
+  }
 
   /** 
       Checks if the widget value changed since the last callback.
@@ -843,12 +845,12 @@ public:
   // Documentation and implementation in Fl_Widget.cxx
   void do_callback(Fl_Widget* o,void* arg=0);
 
-  /** Internal use only. */
+  /* Internal use only. */
   int test_shortcut();
-  /** Internal use only. */
+  /* Internal use only. */
   static unsigned int label_shortcut(const char *t);
-  /** Internal use only. */
-  static int test_shortcut(const char*);
+  /* Internal use only. */
+  static int test_shortcut(const char*, const bool require_alt = false);
 
   /** Checks if w is a child of this widget.
       \param[in] w potential child widget
@@ -918,7 +920,7 @@ public:
   /** Sets width ww and height hh accordingly with the label size.
       Labels with images will return w() and h() of the image.
    */
-  void measure_label(int& ww, int& hh) {label_.measure(ww, hh);}
+  void measure_label(int& ww, int& hh) const {label_.measure(ww, hh);}
 
   /** Returns a pointer to the primary Fl_Window widget.
       \retval  NULL if no window is associated with this widget.  
@@ -971,5 +973,5 @@ public:
 #endif
 
 //
-// End of "$Id: Fl_Widget.H 7469 2010-04-07 23:17:33Z matt $".
+// End of "$Id: Fl_Widget.H 7903 2010-11-28 21:06:39Z matt $".
 //

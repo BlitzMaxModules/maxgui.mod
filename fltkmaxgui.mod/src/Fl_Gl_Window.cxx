@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Gl_Window.cxx 7351 2010-03-29 10:35:00Z matt $"
+// "$Id: Fl_Gl_Window.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // OpenGL window code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -297,7 +297,7 @@ void Fl_Gl_Window::flush() {
     // SGI 320 messes up overlay with user-defined cursors:
     if (Fl_X::i(this)->cursor && Fl_X::i(this)->cursor != fl_default_cursor) {
       fixcursor = true; // make it restore cursor later
-//      SetCursor(0);
+      SetCursor(0);
     }
     fl_set_gl_context(this, (GLContext)overlay);
     if (fl_overlay_depth)
@@ -311,7 +311,7 @@ void Fl_Gl_Window::flush() {
     wglSwapLayerBuffers(Fl_X::i(this)->private_dc, WGL_SWAP_OVERLAY1);
     // if only the overlay was damaged we are done, leave main layer alone:
     if (damage() == FL_DAMAGE_OVERLAY) {
-//      if (fixcursor) SetCursor(Fl_X::i(this)->cursor);
+      if (fixcursor) SetCursor(Fl_X::i(this)->cursor);
       return;
     }
   }
@@ -402,7 +402,7 @@ void Fl_Gl_Window::flush() {
   }
 
 #if HAVE_GL_OVERLAY && defined(WIN32)
-//  if (fixcursor) SetCursor(Fl_X::i(this)->cursor);
+  if (fixcursor) SetCursor(Fl_X::i(this)->cursor);
 #endif
   valid(1);
   context_valid(1);
@@ -522,6 +522,28 @@ void Fl_Gl_Window::draw_overlay() {}
 void Fl_Gl_Window::draw() {
     Fl::fatal("Fl_Gl_Window::draw() *must* be overriden. Please refer to the documentation.");
 }
+
+
+/**
+ Handle some FLTK events as needed.
+ */
+int Fl_Gl_Window::handle(int event) 
+{
+#if (__APPLE_QUARTZ__)
+  if (event==FL_HIDE) {
+    // if we are not hidden, just the parent was hidden, so we must throw away the context
+    if (!visible_r())
+      context(0); // remove context wthout setting the hidden flags
+  }
+  if (event==FL_SHOW) {
+    // if we are not hidden, just the parent was shown, so we must create a new context
+    if (visible_r())
+      show(); //
+  }
+#endif
+  return Fl_Window::handle(event);
+}
+
 //
-// End of "$Id: Fl_Gl_Window.cxx 7351 2010-03-29 10:35:00Z matt $".
+// End of "$Id: Fl_Gl_Window.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

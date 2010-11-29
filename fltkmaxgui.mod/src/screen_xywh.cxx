@@ -1,9 +1,9 @@
 //
-// "$Id: screen_xywh.cxx 7351 2010-03-29 10:35:00Z matt $"
+// "$Id: screen_xywh.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Screen/monitor bounding box API for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -254,5 +254,5 @@ void Fl::screen_xywh(int &X, int &Y, int &W, int &H, int n) {
 
 
 //
-// End of "$Id: screen_xywh.cxx 7351 2010-03-29 10:35:00Z matt $".
+// End of "$Id: screen_xywh.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

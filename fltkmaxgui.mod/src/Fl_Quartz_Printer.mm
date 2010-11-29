@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Quartz_Printer.mm 7617 2010-05-27 17:20:18Z manolo $"
+// "$Id: Fl_Quartz_Printer.mm 7894 2010-11-26 10:22:40Z manolo $"
 //
 // Mac OS X-specific printing support (objective-c++) for the Fast Light Tool Kit (FLTK).
 //
@@ -41,7 +41,8 @@ Fl_System_Printer::Fl_System_Printer(void)
   y_offset = 0;
   scale_x = scale_y = 1.;
   type_ = device_type;
-  driver(fl_device);
+  gc = 0;
+  driver(fl_graphics_driver);
 }
 
 Fl_System_Printer::~Fl_System_Printer(void) {}
@@ -164,8 +165,8 @@ int Fl_Printer::printable_rect(int *w, int *h)
   
   x = (int)pmRect.left;
   y = (int)pmRect.top;
-  *w = (int)(pmRect.right - x) / scale_x + 1;
-  *h = (int)(pmRect.bottom - y) / scale_y + 1;
+  *w = int((int)(pmRect.right - x) / scale_x + 1);
+  *h = int((int)(pmRect.bottom - y) / scale_y + 1);
   return 0;
 }
 
@@ -297,5 +298,5 @@ void Fl_Printer::end_job (void)
 #endif // __APPLE__
 
 //
-// End of "$Id: Fl_Quartz_Printer.mm 7617 2010-05-27 17:20:18Z manolo $".
+// End of "$Id: Fl_Quartz_Printer.mm 7894 2010-11-26 10:22:40Z manolo $".
 //

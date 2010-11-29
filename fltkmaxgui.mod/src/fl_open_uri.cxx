@@ -1,5 +1,5 @@
 //
-// "$Id: fl_open_uri.cxx 6986 2010-01-01 18:30:49Z greg.ercolano $"
+// "$Id: fl_open_uri.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // fl_open_uri() code for FLTK.
 //
@@ -7,7 +7,7 @@
 //
 //    gcc -I/fltk/dir -I/fltk/dir/src -DTEST -o fl_open_uri fl_open_uri.cxx -lfltk
 //
-// Copyright 2003-2009 by Michael R Sweet
+// Copyright 2003-2010 by Michael R Sweet
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -376,5 +376,5 @@ int main(int argc, char **argv) {
 
 
 //
-// End of "$Id: fl_open_uri.cxx 6986 2010-01-01 18:30:49Z greg.ercolano $".
+// End of "$Id: fl_open_uri.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

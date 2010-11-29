@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Double_Window.cxx 7651 2010-06-19 15:19:13Z manolo $"
+// "$Id: Fl_Double_Window.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Double-buffered window code for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -65,7 +65,37 @@ void Fl_Double_Window::show() {
   Fl_Window::show();
 }
 
+static void fl_copy_offscreen_to_display(int x, int y, int w, int h, Fl_Offscreen pixmap, int srcx, int srcy);
+
+/** \addtogroup fl_drawings
+ @{
+ */
+/** Copy a rectangular area of the given offscreen buffer into the current drawing destination.
+ \param x,y	position where to draw the copied rectangle
+ \param w,h	size of the copied rectangle
+ \param pixmap  offscreen buffer containing the rectangle to copy
+ \param srcx,srcy origin in offscreen buffer of rectangle to copy
+ */
+void fl_copy_offscreen(int x, int y, int w, int h, Fl_Offscreen pixmap, int srcx, int srcy) {
+  if( fl_graphics_driver == fl_display_device->driver()) {
+    fl_copy_offscreen_to_display(x, y, w, h, pixmap, srcx, srcy);
+  }
+  else { // when copy is not to the display
+    fl_begin_offscreen(pixmap);
+    uchar *img = fl_read_image(NULL, srcx, srcy, w, h, 0);
+    fl_end_offscreen();
+    fl_draw_image(img, x, y, w, h, 3, 0);
+    delete img;
+  }
+}
+/** @} */
+
 #if defined(USE_X11)
+
+static void fl_copy_offscreen_to_display(int x, int y, int w, int h, Fl_Offscreen pixmap, int srcx, int srcy) {
+    XCopyArea(fl_display, pixmap, fl_window, fl_gc, srcx, srcy, w, h, x, y);
+}
+
 
 // maybe someone feels inclined to implement alpha blending on X11?
 char fl_can_do_alpha_blending() {
@@ -134,7 +164,7 @@ HDC fl_makeDC(HBITMAP bitmap) {
   return new_gc;
 }
 
-void fl_copy_offscreen(int x,int y,int w,int h,HBITMAP bitmap,int srcx,int srcy) {
+static void fl_copy_offscreen_to_display(int x,int y,int w,int h,HBITMAP bitmap,int srcx,int srcy) {
   HDC new_gc = CreateCompatibleDC(fl_gc);
   int save = SaveDC(new_gc);
   SelectObject(new_gc, bitmap);
@@ -164,19 +194,10 @@ void fl_copy_offscreen_with_alpha(int x,int y,int w,int h,HBITMAP bitmap,int src
 
 extern void fl_restore_clip();
 
-#elif defined(__APPLE_QUARTZ__)
+#elif defined(__APPLE_QUARTZ__) || defined(FL_DOXYGEN)
 
 char fl_can_do_alpha_blending() {
   return 1;
-}
-
-Fl_Offscreen fl_create_offscreen(int w, int h) {
-  void *data = calloc(w*h,4);
-  CGColorSpaceRef lut = CGColorSpaceCreateDeviceRGB();
-  CGContextRef ctx = CGBitmapContextCreate(
-    data, w, h, 8, w*4, lut, kCGImageAlphaNoneSkipLast);
-  CGColorSpaceRelease(lut);
-  return (Fl_Offscreen)ctx;
 }
 
 Fl_Offscreen fl_create_offscreen_with_alpha(int w, int h) {
@@ -188,14 +209,42 @@ Fl_Offscreen fl_create_offscreen_with_alpha(int w, int h) {
   return (Fl_Offscreen)ctx;
 }
 
-void fl_copy_offscreen(int x,int y,int w,int h,Fl_Offscreen osrc,int srcx,int srcy) {
+/** \addtogroup fl_drawings
+ @{
+ */
+
+/** 
+  Creation of an offscreen graphics buffer.
+ \param w,h     width and height in pixels of the buffer.
+ \return    the created graphics buffer.
+ */
+Fl_Offscreen fl_create_offscreen(int w, int h) {
+  void *data = calloc(w*h,4);
+  CGColorSpaceRef lut = CGColorSpaceCreateDeviceRGB();
+  CGContextRef ctx = CGBitmapContextCreate(
+    data, w, h, 8, w*4, lut, kCGImageAlphaNoneSkipLast);
+  CGColorSpaceRelease(lut);
+  return (Fl_Offscreen)ctx;
+}
+
+static void bmProviderRelease (void *src, const void *data, size_t size)
+{
+  CFIndex count = CFGetRetainCount(src);
+  CFRelease(src);
+  if(count == 1) free((void*)data);
+}
+
+static void fl_copy_offscreen_to_display(int x,int y,int w,int h,Fl_Offscreen osrc,int srcx,int srcy) {
   CGContextRef src = (CGContextRef)osrc;
   void *data = CGBitmapContextGetData(src);
   int sw = CGBitmapContextGetWidth(src);
   int sh = CGBitmapContextGetHeight(src);
   CGImageAlphaInfo alpha = CGBitmapContextGetAlphaInfo(src);
   CGColorSpaceRef lut = CGColorSpaceCreateDeviceRGB();
-  CGDataProviderRef src_bytes = CGDataProviderCreateWithData( 0L, data, sw*sh*4, 0L);
+  // when output goes to a Quartz printercontext, release of the bitmap must be
+  // delayed after the end of the print page
+  CFRetain(src);
+  CGDataProviderRef src_bytes = CGDataProviderCreateWithData( src, data, sw*sh*4, bmProviderRelease);
   CGImageRef img = CGImageCreate( sw, sh, 8, 4*8, 4*sw, lut, alpha,
     src_bytes, 0L, false, kCGRenderingIntentDefault);
   // fl_push_clip();
@@ -208,20 +257,29 @@ void fl_copy_offscreen(int x,int y,int w,int h,Fl_Offscreen osrc,int srcx,int sr
   CGDataProviderRelease(src_bytes);
 }
 
+/**  Deletion of an offscreen graphics buffer.
+ \param ctx     the buffer to be deleted.
+ */
 void fl_delete_offscreen(Fl_Offscreen ctx) {
   if (!ctx) return;
   void *data = CGBitmapContextGetData((CGContextRef)ctx);
+  CFIndex count = CFGetRetainCount(ctx);
   CGContextRelease((CGContextRef)ctx);
-  if (!data) return;
-  free(data);
+  if(count == 1) free(data);
 }
 
 const int stack_max = 16;
 static int stack_ix = 0;
 static CGContextRef stack_gc[stack_max];
 static Window stack_window[stack_max];
+static Fl_Surface_Device *_ss;
 
+/**  Send all subsequent drawing commands to this offscreen buffer.
+ \param ctx     the offscreen buffer.
+ */
 void fl_begin_offscreen(Fl_Offscreen ctx) {
+  _ss = fl_surface; 
+  fl_display_device->set_current();
   if (stack_ix<stack_max) {
     stack_gc[stack_ix] = fl_gc;
     stack_window[stack_ix] = fl_window;
@@ -235,6 +293,8 @@ void fl_begin_offscreen(Fl_Offscreen ctx) {
   fl_push_no_clip();
 }
 
+/** Quit sending drawing commands to the current offscreen buffer.
+ */
 void fl_end_offscreen() {
   Fl_X::q_release_context();
   fl_pop_clip();
@@ -246,7 +306,10 @@ void fl_end_offscreen() {
     fl_gc = stack_gc[stack_ix];
     fl_window = stack_window[stack_ix];
   }
+  _ss->set_current();
 }
+
+/** @} */
 
 extern void fl_restore_clip();
 
@@ -394,5 +457,5 @@ Fl_Double_Window::~Fl_Double_Window() {
 }
 
 //
-// End of "$Id: Fl_Double_Window.cxx 7651 2010-06-19 15:19:13Z manolo $".
+// End of "$Id: Fl_Double_Window.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

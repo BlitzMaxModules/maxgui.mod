@@ -1,9 +1,9 @@
 //
-// "$Id: fl_color.cxx 7617 2010-05-27 17:20:18Z manolo $"
+// "$Id: fl_color.cxx 7903 2010-11-28 21:06:39Z matt $"
 //
 // Color functions for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
@@ -202,7 +202,7 @@ static inline uchar realcolor(uchar color, uchar mask) {
   }
   return result;
 #  else
-  return (color&mask) | (~mask)&(mask>>1);
+  return (color&mask) | ( (~mask)&(mask>>1) );
 #  endif
 }
 
@@ -361,14 +361,12 @@ void Fl::set_color(Fl_Color i, unsigned c) {
 
 #endif // end of X-specific code
 /**
-    Returns the RGB value(s) for the given FLTK color index. The
-    first form returns the RGB values packed in a 32-bit unsigned
+    Returns the RGB value(s) for the given FLTK color index.
+    
+    This form returns the RGB values packed in a 32-bit unsigned
     integer with the red value in the upper 8 bits, the green value
     in the next 8 bits, and the blue value in bits 8-15.  The lower
     8 bits will always be 0.
-    
-    The second form returns the red, green, and blue values
-    separately in referenced variables.
 */
 unsigned Fl::get_color(Fl_Color i) {
   if (i & 0xffffff00) return (i);
@@ -383,7 +381,14 @@ void Fl::set_color(Fl_Color i, uchar red, uchar green, uchar blue) {
   Fl::set_color((Fl_Color)(i & 255),
 	((unsigned)red<<24)+((unsigned)green<<16)+((unsigned)blue<<8));
 }
-/** See unsigned get_color(Fl_Color c) */
+/**
+    Returns the RGB value(s) for the given FLTK color index. 
+    
+    This form returns the red, green, and blue values
+    separately in referenced variables.
+
+    See also unsigned get_color(Fl_Color c)
+ */
 void Fl::get_color(Fl_Color i, uchar &red, uchar &green, uchar &blue) {
   unsigned c;
 
@@ -456,8 +461,8 @@ Fl_Color fl_contrast(Fl_Color fg, Fl_Color bg) {
   l2 = ((c2 >> 24) * 30 + ((c2 >> 16) & 255) * 59 + ((c2 >> 8) & 255) * 11) / 100;
 
   // Compare and return the contrasting color...
-  if ((l1 - l2) > 50) return fg;
-  else if ((l2 - l1) > 50) return fg;
+  if ((l1 - l2) > 60) return fg;
+  else if ((l2 - l1) > 60) return fg;
   else if (l2 > 127) return FL_BLACK;
   else return FL_WHITE;
 }
@@ -465,5 +470,5 @@ Fl_Color fl_contrast(Fl_Color fg, Fl_Color bg) {
    @}
 */
 //
-// End of "$Id: fl_color.cxx 7617 2010-05-27 17:20:18Z manolo $".
+// End of "$Id: fl_color.cxx 7903 2010-11-28 21:06:39Z matt $".
 //

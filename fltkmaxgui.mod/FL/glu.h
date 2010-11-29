@@ -1,9 +1,9 @@
 //
-// "$Id: glu.h 6942 2009-11-18 12:22:51Z AlbrechtS $"
+// "$Id: glu.h 7903 2010-11-28 21:06:39Z matt $"
 //
 // GLu header file for the Fast Light Tool Kit (FLTK).
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 //
 // You must include this instead of GL/gl.h to get the Microsoft
 // APIENTRY stuff included (from <windows.h>) prior to the OpenGL
@@ -56,5 +56,5 @@
 #endif // !FL_glu_H
 
 //
-// End of "$Id: glu.h 6942 2009-11-18 12:22:51Z AlbrechtS $".
+// End of "$Id: glu.h 7903 2010-11-28 21:06:39Z matt $".
 //

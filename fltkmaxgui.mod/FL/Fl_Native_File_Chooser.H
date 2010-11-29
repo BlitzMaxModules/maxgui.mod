@@ -1,9 +1,9 @@
 //
-// "$Id: Fl_Native_File_Chooser.H 7003 2010-01-14 20:47:59Z greg.ercolano $"
+// "$Id: Fl_Native_File_Chooser.H 7903 2010-11-28 21:06:39Z matt $"
 //
 // FLTK native OS file chooser widget
 //
-// Copyright 1998-2009 by Bill Spitzak and others.
+// Copyright 1998-2010 by Bill Spitzak and others.
 // Copyright 2004 Greg Ercolano.
 //
 // This library is free software; you can redistribute it and/or
@@ -47,5 +47,5 @@
 #endif /*FL_NATIVE_FILE_CHOOSER_H*/
 
 //
-// End of "$Id: Fl_Native_File_Chooser.H 7003 2010-01-14 20:47:59Z greg.ercolano $".
+// End of "$Id: Fl_Native_File_Chooser.H 7903 2010-11-28 21:06:39Z matt $".
 //

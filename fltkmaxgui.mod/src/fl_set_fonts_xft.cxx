@@ -1,5 +1,5 @@
 //
-// "$Id: fl_set_fonts_xft.cxx 6833 2009-07-23 22:51:56Z AlbrechtS $"
+// "$Id: fl_set_fonts_xft.cxx 7765 2010-10-28 18:02:20Z matt $"
 //
 // More font utilities for the Fast Light Tool Kit (FLTK).
 //
@@ -116,7 +116,7 @@ static void make_raw_name(char *raw, char *pretty)
   char *nm2 = strchr(pretty, ',');
   if(nm2) *nm2 = 0; // terminate name after first entry
   raw[0] = ' '; raw[1] = 0; // Default start of "raw name" text
-  strncat(raw, pretty, LOCAL_RAW_NAME_MAX);
+  strncat(raw, pretty, LOCAL_RAW_NAME_MAX-1);
 #endif
   // At this point, the name is "marked" as regular...
   if (style)
@@ -380,5 +380,5 @@ int Fl::get_font_sizes(Fl_Font fnum, int*& sizep) {
 }
 
 //
-// End of "$Id: fl_set_fonts_xft.cxx 6833 2009-07-23 22:51:56Z AlbrechtS $".
+// End of "$Id: fl_set_fonts_xft.cxx 7765 2010-10-28 18:02:20Z matt $".
 //

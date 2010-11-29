@@ -1,9 +1,9 @@
 /*
- * "$Id: fl_utf.c 7609 2010-05-17 20:03:47Z engelsman $"
+ * "$Id: fl_utf.c 7903 2010-11-28 21:06:39Z matt $"
  *
  * This is the utf.c file from fltk2 adapted for use in my fltk1.1 port
  */
-/* Copyright 2006-2009 by Bill Spitzak and others.
+/* Copyright 2006-2010 by Bill Spitzak and others.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -151,7 +151,7 @@ unsigned fl_utf8decode(const char* p, const char* end, int* len)
   } else if (c < 0xc2) {
     goto FAIL;
   }
-  if (p+1 >= end || (p[1]&0xc0) != 0x80) goto FAIL;
+  if ( (end && p+1 >= end) || (p[1]&0xc0) != 0x80) goto FAIL;
   if (c < 0xe0) {
     if (len) *len = 2;
     return
@@ -173,7 +173,7 @@ unsigned fl_utf8decode(const char* p, const char* end, int* len)
 #endif
   } else if (c < 0xf0) {
   UTF8_3:
-    if (p+2 >= end || (p[2]&0xc0) != 0x80) goto FAIL;
+    if ( (end && p+2 >= end) || (p[2]&0xc0) != 0x80) goto FAIL;
     if (len) *len = 3;
     return
       ((p[0] & 0x0f) << 12) +
@@ -184,7 +184,7 @@ unsigned fl_utf8decode(const char* p, const char* end, int* len)
     goto UTF8_4;
   } else if (c < 0xf4) {
   UTF8_4:
-    if (p+3 >= end || (p[2]&0xc0) != 0x80 || (p[3]&0xc0) != 0x80) goto FAIL;
+    if ( (end && p+3 >= end) || (p[2]&0xc0) != 0x80 || (p[3]&0xc0) != 0x80) goto FAIL;
     if (len) *len = 4;
 #if STRICT_RFC3629
     /* RFC 3629 says all codes ending in fffe or ffff are illegal: */
@@ -905,5 +905,5 @@ int fl_wcwidth(const char* src) {
 /** @} */
 
 /*
- * End of "$Id: fl_utf.c 7609 2010-05-17 20:03:47Z engelsman $".
+ * End of "$Id: fl_utf.c 7903 2010-11-28 21:06:39Z matt $".
  */

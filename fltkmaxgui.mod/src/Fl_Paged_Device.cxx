@@ -1,5 +1,5 @@
 //
-// "$Id: Fl_Paged_Device.cxx 7623 2010-05-27 17:52:27Z manolo $"
+// "$Id: Fl_Paged_Device.cxx 7708 2010-10-01 00:30:08Z greg.ercolano $"
 //
 // implementation of Fl_Paged_Device class for the Fast Light Tool Kit (FLTK).
 //
@@ -149,7 +149,8 @@ void Fl_Paged_Device::print_window_part(Fl_Window *win, int x, int y, int w, int
   }  
   save_front->show();
   current->set_current();
-  for ( int i = 0, offset = 0; i < count; i++, offset += slice) {
+  offset = 0;
+  for ( int i = 0; i < count; i++, offset += slice) {
     width = slice; 
     if (offset + width > w) width = w - offset;
     fl_draw_image(image_data[i], delta_x + offset, delta_y, width, h, 3);
@@ -286,6 +287,6 @@ void Fl_Paged_Device::translate(int x, int y) {}
 void Fl_Paged_Device::untranslate(void) {}
 
 //
-// End of "$Id: Fl_Paged_Device.cxx 7623 2010-05-27 17:52:27Z manolo $".
+// End of "$Id: Fl_Paged_Device.cxx 7708 2010-10-01 00:30:08Z greg.ercolano $".
 //
 
