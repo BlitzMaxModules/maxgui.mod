@@ -2478,12 +2478,24 @@ void NSInitGadget(nsgadget *gadget){
 		break;		
 	case GADGET_COMBOBOX:
 		if (rect.size.height > 26) rect.size.height = 26;
-		combobox=[[NSComboBox alloc] initWithFrame:rect];
-		[combobox setUsesDataSource:NO];
-		[combobox setCompletes:YES];
-		[combobox setDelegate:GlobalApp];		
-		[combobox setEditable:(style&COMBOBOX_EDITABLE)?YES:NO];			
-		[combobox setSelectable:YES];			
+		if (style&COMBOBOX_EDITABLE){
+			combobox=[[NSComboBox alloc] initWithFrame:rect];
+			[combobox setUsesDataSource:NO];
+			[combobox setCompletes:YES];
+			[combobox setDelegate:GlobalApp];		
+			[combobox setEditable:YES];			
+			[combobox setSelectable:YES];
+		} else {
+
+			combobox=[[NSPopUpButton alloc] initWithFrame:rect pullsDown:NO];
+
+			[combobox setMenu:[[[NSMenu alloc] initWithTitle:@""] autorelease]];
+
+			[combobox synchronizeTitleAndSelectedItem];
+
+			[[NSNotificationCenter defaultCenter] addObserver:(id)GlobalApp selector:@selector(comboBoxSelectionDidChange:) name:@"NSPopUpButtonWillPopUpNotification" object:combobox];
+
+		}
 		if (view) [view addSubview:combobox];		
 		gadget->handle=combobox;
 		gadget->view=combobox;
@@ -3359,8 +3371,8 @@ void NSRethink(nsgadget *gadget){
 void NSRemoveColor(nsgadget *gadget){
 	switch (gadget->internalclass){
 	case GADGET_BUTTON:
-		if ([[gadget->handle cell] respondsToSelector:@selector(setDrawsBackground)]){
-			[[gadget->handle cell] setDrawsBackground:false];
+		if ([[gadget->handle cell] respondsToSelector:@selector(setDrawsBackground:)]){
+			[[gadget->handle cell] setDrawsBackground:NO];
 		}
 		break;
 	case GADGET_WINDOW:
@@ -3369,9 +3381,12 @@ void NSRemoveColor(nsgadget *gadget){
 		break;
 	case GADGET_LABEL:
 		if((gadget->style&3)==LABEL_SEPARATOR) break;
+		/* Fall through */
 	case GADGET_COMBOBOX:
 	case GADGET_TEXTFIELD:
-		[gadget->handle setDrawsBackground:false];
+		if ([gadget->handle respondsToSelector:@selector(setDrawsBackground:)]){
+			[gadget->handle setDrawsBackground:NO];
+		}
 		break;
 	case GADGET_LISTBOX:
 	case GADGET_TREEVIEW:
@@ -3389,18 +3404,23 @@ void NSSetColor(nsgadget *gadget,int r,int g,int b){
 	
 	switch (gadget->internalclass){
 	case GADGET_BUTTON:
-		if ([[gadget->handle cell] respondsToSelector:@selector(setBackgroundColor)]) [[gadget->handle cell] setBackgroundColor:color];
+		if ([[gadget->handle cell] respondsToSelector:@selector(setBackgroundColor:)]){
+			[[gadget->handle cell] setBackgroundColor:color];
+		}
 		break;
-	case GADGET_COMBOBOX:
 	case GADGET_WINDOW:
 		[gadget->handle setBackgroundColor:color];
 		[gadget->handle display];
 		break;
 	case GADGET_LABEL:
 		if((gadget->style&3)==LABEL_SEPARATOR) break;
-		[gadget->handle setDrawsBackground:YES];
+		/* Fall through */
+	case GADGET_COMBOBOX:
 	case GADGET_TEXTFIELD:
-		[gadget->handle setBackgroundColor:color];
+		if ([gadget->handle respondsToSelector:@selector(setDrawsBackground:)])
+			[gadget->handle setDrawsBackground:YES];
+		if ([gadget->handle respondsToSelector:@selector(setBackgroundColor:)])	
+			[gadget->handle setBackgroundColor:color];
 		break;
 	case GADGET_LISTBOX:
 	case GADGET_TREEVIEW:
@@ -3672,6 +3692,7 @@ void NSAddItem(nsgadget *gadget,int index,BBString *data,BBString *tip,NSImage *
 	ListView			*listbox;
 	Toolbar			*toolbar;
 	NSToolbarItem		*item;
+	NSMenuItem        *menuItem;
 
 	text=NSStringFromBBString(data);
 	tiptext=NSStringFromBBString(tip);
@@ -3682,8 +3703,24 @@ void NSAddItem(nsgadget *gadget,int index,BBString *data,BBString *tip,NSImage *
 		break;
 	case GADGET_COMBOBOX:
 		combo=(NSControl*)gadget->handle;
-		[combo insertItemWithObjectValue:text atIndex:index];
-//		[[combo itemAtIndex:index] setImage:image];
+		if([combo isKindOfClass:[NSComboBox class]]) {
+
+			[combo insertItemWithObjectValue:text atIndex:index];
+
+		} else {
+			menuItem = [[NSMenuItem alloc] initWithTitle:text action:NULL keyEquivalent:@""];
+			[menuItem setImage:image];
+			[[combo menu] insertItem:menuItem atIndex:index];
+			[menuItem release];
+			
+
+			/*
+			[combo insertItemWithTitle:text atIndex:index]; 
+
+			[[combo itemAtIndex:index] setImage:image];
+			*/
+
+		}
 		break;
 	case GADGET_TABBER:
 		tabber=(NSTabView*)gadget->handle;	
@@ -3726,6 +3763,7 @@ void NSSetItem(nsgadget *gadget,int index,BBString *data,BBString *tip,NSImage *
 	ListView			*listbox;
 	Toolbar			*toolbar;
 	NSToolbarItem		*item;
+	NSMenuItem        *menuItem; 
 
 	text=NSStringFromBBString(data);
 	tiptext=NSStringFromBBString(tip);
@@ -3738,8 +3776,24 @@ void NSSetItem(nsgadget *gadget,int index,BBString *data,BBString *tip,NSImage *
 	case GADGET_COMBOBOX:
 		combo=(NSControl*)gadget->handle;
 		[combo removeItemAtIndex:index];
-		[combo insertItemWithObjectValue:text atIndex:index];
-//		[[combo itemAtIndex:index] setImage:image];
+		if([combo isKindOfClass:[NSComboBox class]]) {
+
+			[combo insertItemWithObjectValue:text atIndex:index];
+
+		} else {
+			menuItem = [[NSMenuItem alloc] initWithTitle:text action:NULL keyEquivalent:@""];
+			[menuItem setImage:image];
+			[[combo menu] insertItem:menuItem atIndex:index];
+			[menuItem release];
+			
+
+			/*
+			[combo insertItemWithTitle:text atIndex:index]; 
+
+			[[combo itemAtIndex:index] setImage:image];
+			*/
+
+		}
 		break;
 	case GADGET_TABBER:
 		tabber=(NSTabView*)gadget->handle;
@@ -3802,10 +3856,24 @@ void NSSelectItem(nsgadget *gadget,int index,int state){
 		break;
 	case GADGET_COMBOBOX:
 		combo=(NSControl*)gadget->handle;
-		[combo setDelegate:nil];
+
+		if([combo isKindOfClass:[NSComboBox class]])
+
+			[combo setDelegate:nil];
+
 		[combo selectItemAtIndex:index];
-		[combo setObjectValue:[combo objectValueOfSelectedItem]];
-		[combo setDelegate:GlobalApp];
+
+		if([combo isKindOfClass:[NSComboBox class]])
+
+			[combo setObjectValue:[combo objectValueOfSelectedItem]];
+
+		else
+
+			[combo setObjectValue:[combo objectValue]];
+
+		if([combo isKindOfClass:[NSComboBox class]])
+
+			[combo setDelegate:GlobalApp];
 		break;
 	case GADGET_TABBER:
 		tabber=(NSTabView*)gadget->handle;
