@@ -56,17 +56,19 @@
 //   Fl_Help_View::get_color()       - Get an alignment attribute.
 //   Fl_Help_View::get_css_value()   - Outputs the value of a given css property to buffer.
 //   Fl_Help_View::get_font_size()   - Get a height value for font-size.
-
 //   Fl_Help_View::get_image()       - Get an inline image.
 //   Fl_Help_View::get_length()      - Get a length value either absolute or %.
 //   Fl_Help_View::get_length()      - Get a length value of a given width.
 //   Fl_Help_View::gettopline()      - Get current topline in document.
 //   Fl_Help_View::handle()          - Handle events in the widget.
 //   Fl_Help_View::hv_draw()         - Draws text.
+//   Fl_Help_View::initfont()        - Initialize font stack.
 //   Fl_Help_View::leftline()        - Set the left line position.
 //   Fl_Help_View::load()            - Load the specified file.
 //   Fl_Help_View::load_css()        - Loads a css file.
 //   Fl_Help_View::parse_css()       - Parses all supported css properties.
+//   Fl_Help_View::popfont()         - Pop from font stack.
+//   Fl_Help_View::pushfont()        - Push to font stack.
 //   Fl_Help_View::resize()          - Resize the help widget.
 //   Fl_Help_View::select_all()      - Select all text.
 //   Fl_Help_View::setstyle() -      - Set the html style flag.
@@ -75,18 +77,16 @@
 //   Fl_Help_View::value()           - Set the help text directly.
 //   Fl_Help_View::~Fl_Help_View()   - Destroy a Fl_Help_View widget.
 //
-// Local functions:
+// Local:
 //
-//   command()                       - Convert a command with up to four
-//                                     letters into an uint.
-//   quote_char()                    - Return the character code associated
-//                                     with a quoted char.
+//   command()                       - Convert a command with up to four letters into an uint.
+//   quote_char()                    - Return the character code associated with a quoted char.
 //   hscrollbar_callback()           - Callback for the horizontal scrollbar.
 //   scrollbar_callback()            - Callback for the scrollbar.
 //
 
 /*
- markcw: starting in July 2008 I have heavily modified this file and
+ mark: starting in July 2008 I have heavily modified this file and
  it's header. So since I have made so many changes, instead of plonking
  my name everywhere I have made original code comments start in
  uppercase and my code comments start in lowercase.
@@ -133,13 +133,13 @@
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Pixmap.H>
 #include <FL/x.H>
-#include <FL/forms.H> // forms.H for timer in resize()
 #include <stdio.h>
 #include <stdlib.h>
 #include "flstring.h"
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
+#include "forms_timer.cxx" // for fl_gettime in resize()
 
 #if defined(WIN32) && ! defined(__CYGWIN__)
 #  include <io.h>
@@ -322,7 +322,7 @@ struct fl_margins
  - selection must be cleared if another widget get focus!
  - write a comment for every new function
 
- markcw: Static data members don't change the binary size or layout
+ mark: Static data members don't change the binary size or layout
  of a class because they are defined externally.
  For more info on binary compatibility (BC):
  http://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++
@@ -339,7 +339,7 @@ struct fl_margins
  fl_line()
  img->draw()
 
- markcw: local functions more-so static are faster than class functions.
+ mark: local functions more-so static are faster than class functions.
 */
 
 // Text selection
@@ -372,9 +372,9 @@ int Fl_Help_View::serifont_ = 0; // default serif font
 int Fl_Help_View::sansfont_ = 0; // default sans font
 int Fl_Help_View::monofont_ = 0; // default monospace font
 unsigned char Fl_Help_View::fontsize_ = 0; // default font size
-short Fl_Help_View::face_[128][4]; // font face table [m,b,i,p]
-unsigned char Fl_Help_View::flet_[32]; // first face for letter table
-unsigned char Fl_Help_View::fref_[320]; // face reference table
+short Fl_Help_View::face_[250][4]; // font face table [m,b,i,p]
+unsigned char Fl_Help_View::flet_[30]; // first face for letter table
+unsigned char Fl_Help_View::fref_[1000]; // face reference table
 
 //
 // Fl_Help_View::Fl_Help_View() - Build a Fl_Help_View widget.
@@ -405,7 +405,7 @@ Fl_Help_View::Fl_Help_View(int xx, // I - Left position
   nblocks_ = 0; // Number of blocks
   blocks_ = (Fl_Help_Block *)0; // Blocks
 
-  nfonts_ = 0; // Number of fonts in stack
+  nfonts_ = 0; // Number of fonts in stack - replaced
 
   link_ = (Fl_Help_Func *)0; // Link transform function
 
@@ -413,7 +413,7 @@ Fl_Help_View::Fl_Help_View(int xx, // I - Left position
   nlinks_ = 0; // Number of links
   links_ = (Fl_Help_Link *)0; // Links
 
-  // rem'd targets_ = (Fl_Help_Target *)0;
+  //targets_ = (Fl_Help_Target *)0; // rem'd
   atargets_ = 0; // Allocated targets
   ntargets_ = 0; // Number of targets
 
@@ -462,7 +462,9 @@ Fl_Help_View::Fl_Help_View(int xx, // I - Left position
   d->cssurl = 0; // css url value
   d->path[0] = '\0'; // current file path
   d->lpath[0] = '\0'; // last file path
-
+  d->fonts[0][0] = 0; // font stack
+  d->nfonts = 0; // number of fonts in stack
+  
   build_faces();
 
   // load new default fonts
@@ -475,7 +477,7 @@ Fl_Help_View::Fl_Help_View(int xx, // I - Left position
 } // Fl_Help_View::Fl_Help_View()
 
 //
-// Fl_Help_View::add_block() - obsolete, code moved to new function.
+// Fl_Help_View::add_block() - replaced, code moved
 //
 
 Fl_Help_Block * // O - Pointer to new block
@@ -639,12 +641,13 @@ Fl_Help_View::begin_selection()
 unsigned char // O - number of font faces
 Fl_Help_View::build_faces()
 {
-  char buf[48], namebuf[48]; // buffers
+  char buf[100], namebuf[100], tbufs[100][100]; // buffers
   const char *namep; // pointer
-  char *bufp; // r+w pointer
+  char *bufp, *namebufp; // r+w pointer
   int ti = 0, tj = 0, tk = 0, // temp loop vars
     tnum = 0, lnum = 0, fnum = 0, // temp/last/font counters
-    cbit = 0, fbit = 0, // bits
+    tfi[100], tf[10],
+    cbit = 0, fbit = 0, tbit = 0, // bits
     nfonts = 0, nfaces = 0, // number of fonts and faces
     temp = 0; // lengths
 
@@ -655,24 +658,32 @@ Fl_Help_View::build_faces()
 
   nfonts = Fl::set_fonts(0); // number of ISO8859-1 fonts in list
 
-  for (ti = 0, nfaces = 0; ti < nfonts; ti ++) { // find font faces
+  for (ti = 0, nfaces = 0; ti < nfonts; ti ++) { // find base fonts
     namep = Fl::get_font_name((Fl_Font)ti, &temp); // fltk font name
-    for (tj = 0; namep[tj] != '\0'; tj ++)
-      namebuf[tj] = tolower(namep[tj]); // copy to lowercase
-    namebuf[tj] = '\0'; // nul-terminate
-    if (bufp = strstr(namebuf, " bold")) // remove bold
-      *bufp = '\0';
-    else if (bufp = strstr(namebuf, " italic")) // remove italic
-      *bufp = '\0';
+    for (tk = 0; namep[tk] != '\0'; tk ++)
+      namebuf[tk] = tolower(namep[tk]); // copy chars to lowercase
+    namebuf[tk] = '\0'; // nul-terminate
+    if (strstr(namebuf+1, "black") || strstr(namebuf+1, "bold") ||
+        strstr(namebuf+1, "extra") || strstr(namebuf+1, "heavy") ||
+        strstr(namebuf+1, "inclined") || strstr(namebuf+1, "italic") ||
+        strstr(namebuf+1, "light") || strstr(namebuf+1, "oblique") ||
+        strstr(namebuf+1, "slanted") || strstr(namebuf+1, "wide") ||
+        strstr(namebuf+1, "ultra"))
+      continue; // skip font styles
+    if ((bufp = strstr(namebuf, "-"))) { // full font name
+      if (strstr(bufp+1, "bd") || strstr(bufp+1, "cond") ||
+          strstr(bufp+1, "cn") || strstr(bufp+1, "it") ||
+          strstr(bufp+1, "obl") || strstr(bufp+1, "smbd"))
+      continue; // skip font styles
+    }
     temp = strlen(namebuf);
-    if (temp < strlen(buf)) temp = strlen(buf); // use max length
-    if (!strncmp(namebuf, buf, temp)) fnum ++; // same name as last
-    else fnum = 0; // new name
-    if (fnum == 0 && nfaces < 127) { // store next face
-      face_[nfaces][2] = ti; // first font index for face
-      face_[nfaces][3] = (uchar)namebuf[0]; // first letter for face
+    if (temp < (int)strlen(buf)) temp = strlen(buf); // use bigger length
+    if (!strncmp(namebuf, buf, temp)) continue; // same name as last
+    if (nfaces < (int)sizeof(face_)/8) { // store next face
+      face_[nfaces][2] = ti; // first font for face
+      face_[nfaces][3] = (uchar)*namebuf; // first letter for face, a..z
       if (face_[nfaces][3] < 97 || face_[nfaces][3] > 123)
-        face_[nfaces][3] = 123; // illegal char
+        face_[nfaces][3] = 123; // illegal char, z
       nfaces ++; // next face
     }
     strlcpy(buf, namebuf, sizeof(buf)); // last name in buffer
@@ -689,54 +700,131 @@ Fl_Help_View::build_faces()
     }
   }
 
-  for (ti = 0; ti < nfaces; ti ++) { // sort end of faces
+  for (ti = 0; ti < nfaces; ti ++) { // store all fonts in face table
     fnum = face_[ti][0]; // face index
-    for (tj = 0; tj < nfaces; tj ++) {
-      if (fnum == face_[tj][2]) { // find old face index
-        face_[ti][3] = face_[tj + 1][2]; // store end of face
-        if (tj + 1 == nfaces) // last face index in table
-          face_[ti][3] = nfonts; // set last font index
-        break;
-      }
-    }
-  }
+    namep = Fl::get_font_name((Fl_Font)fnum, &temp);
+    for (tk = 0; namep[tk] != '\0'; tk ++)
+      buf[tk] = tolower(namep[tk]);
+    buf[tk] = '\0'; // nul-terminate
+    if (!(bufp = strstr(buf, "-"))) bufp = buf + tk;
+    *bufp = '\0'; // shorten full name
+    strlcpy(tbufs[0], buf, sizeof(tbufs[0]));
+    face_[ti][1] = face_[ti][2] = face_[ti][3] = 0; // reset
+    memset(tf, 0, sizeof(tf));
 
-  for (ti = 0, lnum = 0; ti < nfaces; ti ++) { // sort letter lut
-    tnum = face_[ti][1] - 97; // current letter, a = 0
-    if (tnum != lnum && tnum < 27) // first instance of letter a..z
-      flet_[tnum] = ti; // store face index
-    lnum = face_[ti][1] - 97; // last letter
-  }
-  flet_[27] = nfaces; // set last face index
-
-  for (ti = 0; ti < nfaces; ti ++) { // build face index table
-    tnum = face_[ti][0]; // current font index
-    lnum = face_[ti][3]; // last font index
-    for (tj = 1; tj < 4; tj ++) face_[ti][tj] = 0; // zero fonts 1..3
-    for (tj = tnum, fbit = 0; tj < lnum; tj ++) { // get font index
-      if (tnum >= lnum - 1) break; // only one font in face
+    for (tj = 0, tfi[0] = fnum, lnum = 1; tj < nfonts; tj ++) { // get all fonts of face
       namep = Fl::get_font_name((Fl_Font)tj, &temp); // fltk font name
       for (tk = 0; namep[tk] != '\0'; tk ++)
         namebuf[tk] = tolower(namep[tk]); // copy to lowercase
       namebuf[tk] = '\0'; // nul-terminate
-      if (temp & 1) cbit = 1; // bold is 1
-      else cbit = 0; // medium or regular/book is 0
-      if (temp & 2) cbit |= 2; // italic is 2, roman is 0
-      fbit |= cbit; // set face bits
-      if (cbit & 1) temp = 1; // bold roman
-      else temp = 0; // medium roman
-      if (cbit & 2) temp |= 2; // italic
-      face_[ti][temp] = tj; // store font index
+      if (!isalpha(namebuf[0])) continue; // skip foreign chars
+      if (!(namebufp = strstr(namebuf, "-"))) namebufp = namebuf; // full font name
+      if (strstr(namebuf, " ") && namebufp == namebuf) { // basic font name
+        namebufp = strstr(namebuf, " bold");
+        if (!namebufp) namebufp = strstr(namebuf, " italic");
+        if (!namebufp) namebufp = strstr(namebuf, " oblique");
+      }
+      if (!strncmp(buf, namebuf, bufp-buf) && (namebufp-namebuf == bufp-buf)) { // face name match
+        strlcpy(tbufs[lnum], namebuf, sizeof(tbufs[lnum]));
+        tfi[lnum] = tj; // font indexes
+        lnum ++; // count fonts
+        if (strstr(namebuf, "-")) { // abbreviations if full name
+          if (strstr(namebufp+1, "bd")) tf[1] = 1;
+          if (strstr(namebufp+1, "it")) tf[2] = 1;
+        }
+        if (strstr(namebufp+1, "bold")) tf[1] = 1; // set flags of current face
+        if (strstr(namebufp+1, "italic")) tf[2] = 1;
+        if (strstr(namebufp+1, "medium")) tf[3] = 1;
+        if (strstr(namebufp+1, "plain")) tf[4] = 1;
+        if (strstr(namebufp+1, "regular")) tf[5] = 1;
+      }
     }
-    if (!face_[ti][1]) face_[ti][1] = face_[ti][0]; // bold to medium
-    if (!face_[ti][2]) face_[ti][2] = face_[ti][0]; // italic to medium
-    if (!face_[ti][3]) face_[ti][3] = face_[ti][1]; // plus to bold
+
+    for (tj = 0; tj < lnum; tj ++, tk = 0) { // sort fonts styles in face
+      if (!(namebufp = strstr(tbufs[tj], "-"))) namebufp = tbufs[tj];
+      if (tf[1] && strstr(namebufp+1, "black")) tk = 1; // favour bold, italic, etc
+      else if (strstr(namebufp+1, "condensed")) tk = 1;
+      else if (strstr(namebufp+1, "cond") && namebufp > tbufs[tj]) tk = 1;
+      else if (strstr(namebufp+1, "cn") && namebufp > tbufs[tj]) tk = 1;
+      else if (strstr(namebufp+1, "extra")) tk = 1;
+      else if (tf[1] && strstr(namebufp+1, "heavy")) tk = 1;
+      else if ((tf[3] || tf[4] || tf[5]) && strstr(namebufp+1, "light")) tk = 1;
+      else if (tf[2] && strstr(namebufp+1, "light")) tk = 1;
+      else if (tf[2] && strstr(namebufp+1, "oblique")) tk = 1;
+      else if (tf[2] && strstr(namebufp+1, "obl") && namebufp > tbufs[tj]) tk = 1;
+      else if (tf[2] && strstr(namebufp+1, "inclined")) tk = 1;
+      else if (tf[1] && strstr(namebufp+1, "semibold")) tk = 1;
+      else if (tf[1] && strstr(namebufp+1, "smbd") && namebufp > tbufs[tj]) tk = 1;
+      else if (tf[2] && strstr(namebufp+1, "slanted")) tk = 1;
+      else if (strstr(namebufp+1, "ultra")) tk = 1;
+      if (lnum > 8 && tf[1] && tf[2]) { // simplify if too many variations
+        tk = 1;
+        if (!strncmp(namebufp+1, "bold", 4) && namebufp[5] == '\0') tk = 0;
+        if (!strncmp(namebufp+1, "italic", 6) && namebufp[7] == '\0') tk = 0;
+        if (!strncmp(namebufp+1, "bolditalic", 10) && namebufp[11] == '\0') tk = 0;
+        if (!strncmp(namebufp+1, "medium", 6) && namebufp[7] == '\0') tk = 0;
+        if (!strncmp(namebufp+1, "regular", 7) && namebufp[8] == '\0') tk = 0;
+      }
+      if (tk == 1) continue; // skip font
+      cbit = fbit = tbit = 0; // set font styles
+      if (strstr(namebufp+1, "medium") || strstr(namebufp+1, "plain") ||
+          strstr(namebufp+1, "regular")) cbit = 1;
+      if (strstr(namebufp+1, "roman") && namebufp > tbufs[tj]) cbit = 1;
+      if (strstr(namebufp+1, "bold") || strstr(namebufp+1, "italic")) cbit = 0;
+      if (strstr(namebufp+1, "black") || strstr(namebufp+1, "bold") ||
+          strstr(namebufp+1, "heavy") || strstr(namebufp+1, "semibold") ||
+          strstr(namebufp+1, "wide")) fbit = 1;
+      else if ((strstr(namebufp+1, "bd") || strstr(namebufp+1, "smbd")) &&
+               namebufp > tbufs[tj]) fbit = 1;
+      if (strstr(namebufp+1, "oblique") || strstr(namebufp+1, "inclined") ||
+          strstr(namebufp+1, "italic") || strstr(namebufp+1, "slanted")) tbit = 1;
+      else if ((strstr(namebufp+1, "it") || strstr(namebufp+1, "obl")) &&
+               namebufp > tbufs[tj]) tbit = 1;
+      if (cbit) face_[ti][0] = tfi[tj];
+      if (fbit && !tbit && !face_[ti][1]) face_[ti][1] = tfi[tj]; // bold
+      if (!fbit && tbit && !face_[ti][2]) face_[ti][2] = tfi[tj]; // italic
+      if (fbit && tbit && !face_[ti][3]) face_[ti][3] = tfi[tj]; // plus
+    }
   }
 
+  for (ti = 0; ti < nfaces; ti ++) { // remove duplicate fonts
+    for (tj = ti+1; tj < nfaces; tj ++)
+      if (face_[ti][1] == face_[tj][1]) face_[tj][1] = 0; // sort face loop does the rest
+  }
+
+  for (ti = 0; ti < nfaces; ti ++) { // sort face table
+    if (!face_[ti][2]) face_[ti][2] = face_[ti][0]; // no italic
+    if (!face_[ti][3]) face_[ti][3] = face_[ti][1]; // no plus
+    if (face_[ti][1]) { // move face
+      for (tk = 0; tk < ti; tk ++) {
+        if (!face_[tk][1]) { // first empty face
+          for (tj = 0; tj <= 3; tj ++) {
+            face_[tk][tj] = face_[ti][tj];
+            face_[ti][tj] = 0;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  for (nfaces = 1; nfaces < (int)sizeof(face_)/8; nfaces ++)
+    if (!face_[nfaces][1]) break; // recount faces
+
+  for (ti = 0, lnum = 0; ti < nfaces; ti ++) { // sort letter lut
+    fnum = face_[ti][0];
+    namep = Fl::get_font_name((Fl_Font)fnum, &temp);
+    tnum = (uchar)tolower(*namep) - 97; // current letter, a = 0
+    if (tnum != lnum && tnum < 27) // first instance of letter a..z
+      flet_[tnum] = ti; // store face index
+    lnum = tnum; // last letter
+  }
+  flet_[27] = nfaces; // last face index
+
   for (ti = 0; ti < nfaces; ti ++) { // face reference table
-    for (tj = 0; tj < 4; tj ++) { // fonts in face
+    for (tj = 0; tj <= 3; tj ++) { // fonts in face
       fnum = face_[ti][tj]; // font index
-      if (fnum < 320) fref_[fnum] = ti; // store face index
+      if (fnum < (int)sizeof(fref_)) fref_[fnum] = ti; // store face index
     }
   }
 
@@ -781,7 +869,7 @@ Fl_Help_View::cmp_targets(const Fl_Help_Link *t0, // I - First target
 } // Fl_Help_View::cmp_targets()
 
 //
-// Fl_Help_View::compare_targets() - obsolete, struct used for d-pointer.
+// Fl_Help_View::compare_targets() - replaced, struct used for d-pointer
 //
 
 int
@@ -798,7 +886,7 @@ Fl_Help_View::compare_targets(const Fl_Help_Target *t0,
 
 int // O - New line
 Fl_Help_View::do_align(Fl_Help_Block *b, // I - Block to add to
-                       int li, // I - Current line, obsolete
+                       int li, // I - Current line - removed
                        int xx, // I - Current X position
                        int ca, // I - Current alignment
                        int &sl) // IO - Starting link
@@ -866,8 +954,9 @@ void Fl_Help_View::draw()
     linew = 0, // current line width
     imgw = 0, // Image width
     imgh = 0, // Image height
-    brflag = 0; // br flag
-  unsigned char font, fsize; // Current font and size
+    brflag = 0, // br flag
+	font = 0; // Current font
+  unsigned char fsize; // Current font size
     //tfont, tempsize; // symbol font hack, not implemented
   Fl_Boxtype bt = (box()) ? box() : FL_DOWN_BOX; // Box to draw
   Fl_Shared_Image *img = 0; // Shared image - rem'd NULL
@@ -942,10 +1031,10 @@ void Fl_Help_View::draw()
 
             ww = (int)fl_width(buf); // Width of word in buf
             /* symbol font hack
-            if (ww == 0) ww = (int)fl_width('&'); // pad control chars
+            if (ww == 0) ww = (int)fl_width("&"); // pad control chars
             */
-            if (needspace && xx > block->x)
-              xx += (int)fl_width(' ');
+			  if (needspace && xx > block->x)
+				  xx += 4;//(int)fl_width(" ");
 
             baseh = 0; // add baseh offset for text
             if (block->maxh > 0 && block->imgy - topline_ == yy)
@@ -981,7 +1070,7 @@ void Fl_Help_View::draw()
               // width of word in tbuf, pad any zero-length control chars
               for (ti = 0, ww = 0; ti < strlen(tbuf); ti ++) {
                 temp = (int)fl_width(tbuf[ti]);
-                if (temp == 0) temp = (int)fl_width('&'); // pad
+                if (temp == 0) temp = (int)fl_width("&"); // pad
                 ww += temp;
               }
 
@@ -992,7 +1081,7 @@ void Fl_Help_View::draw()
               hv_draw(buf, xx + x() - leftline_, yy + y() + baseh); // replaces hv_draw(tbuf..
 
               if (underline) { // Add width for uline spaces after word
-                temp = (isspace((*ptr) & 255)) ? (int)fl_width(' ') : 0;
+                temp = (isspace((*ptr) & 255)) ? (int)fl_width(" ") : 0;
                 fl_xyline(xx + x() - leftline_, yy + y() + 1 + baseh,
                           xx + x() - leftline_ + ww + temp);
               }
@@ -1028,7 +1117,7 @@ void Fl_Help_View::draw()
                 hh = fsize + 2;
               }
               else if (*ptr == '\t') {
-                ti = linew / (int)fl_width(' '); // number of chars
+                ti = linew / (int)fl_width(" "); // number of chars
                 temp = 8 - (ti & 7); // number of tabs
                 for (ti = 0; ti < temp; ti ++) // pre tabs width fix
                   *(sp ++) = ' ';
@@ -1278,7 +1367,7 @@ void Fl_Help_View::draw()
 
             ww = imgw;
             if (needspace && xx > block->x)
-              xx += (int)fl_width(' ');
+              xx += (int)fl_width(" ");
 
             if (img) {
               baseh = block->maxh - imgh; // add baseh offset
@@ -1526,8 +1615,8 @@ void Fl_Help_View::draw()
           else if (!head) // unrecognized tag so draw it
           {
             hv_draw("<", xx + x() - leftline_, yy + y()); // draw '<' char
-            xx += (int)fl_width('<'); // add width of '<' char
-            linew += (int)fl_width('<');
+            xx += (int)fl_width("<"); // add width of '<' char
+            linew += (int)fl_width("<");
             ptr = tagptr + 1; // start of tag + 1
           }
           
@@ -1553,7 +1642,7 @@ void Fl_Help_View::draw()
             if (*ptr == ' ')
               *(sp ++) = ' '; // added ()
             else if (*ptr == '\t') {
-              ti = linew / (int)fl_width(' '); // number of chars, monospace
+              ti = linew / (int)fl_width(" "); // number of chars, monospace
               temp = 8 - (ti & 7); // number of tabs 1..8
               for (ti = 0; ti < temp; ti ++) // pre tabs width fix
                 *(sp ++) = ' '; // added ()
@@ -1607,7 +1696,7 @@ void Fl_Help_View::draw()
 
         if (!head && !pre) { // Normal text
           if (needspace && xx > block->x)
-            xx += (int)fl_width(' ');
+            xx += (int)fl_width(" ");
         }
 
         if (!head) { // Draw text
@@ -1830,7 +1919,7 @@ Fl_Help_View::find(const char *sp, // I - String to find
   // Range check input and value
   if (!sp || !value_) return -1;
 
-  if (pos < 0 || pos >= strlen(value_)) // rem'd (int)
+  if (pos < 0 || pos >= (int)strlen(value_))
     pos = 0;
   else if (pos > 0)
     pos ++;
@@ -1912,7 +2001,7 @@ void Fl_Help_View::follow_link(Fl_Help_Link *lp) // I - Link pointer
   char target[32], // Current target
     dir[1024], // Current directory
     temp[1024], // Temporary filename
-    *tptr, *sptr; // Pointer into temporary filename
+    *tptr, *sptr, *dirp; // Pointer into temporary filename
   const char *namep = lp->filename; // link filename
 
   strlcpy(target, lp->name, sizeof(target));
@@ -1941,7 +2030,7 @@ void Fl_Help_View::follow_link(Fl_Help_Link *lp) // I - Link pointer
       if (directory_[0]) // Add filename
         snprintf(temp, sizeof(temp), "%s/%s", directory_, namep);
       else {
-        getcwd(dir, sizeof(dir)); // ? - try cwd, may be wrong..
+        dirp = getcwd(dir, sizeof(dir)); // ? - try cwd, may be wrong..
         snprintf(temp, sizeof(temp), "%s/%s", dir, namep); // ?
       }
     }
@@ -1964,7 +2053,7 @@ void Fl_Help_View::follow_link(Fl_Help_Link *lp) // I - Link pointer
           d->isnav = 1; // set is nav link
         }
       }
-      else if (tptr = strrchr(temp, '/')) // relative path, add filename
+      else if ((tptr = strrchr(temp, '/'))) // relative path, add filename
           strlcpy(tptr + 1, namep, sizeof(temp)-(tptr + 1 - temp));
     }
 
@@ -1973,14 +2062,14 @@ void Fl_Help_View::follow_link(Fl_Help_Link *lp) // I - Link pointer
       strlcat(temp, target, sizeof(temp));
     }
 
-    while (tptr = strstr(temp, "/..")) { // remove ../ from path
+    while ((tptr = strstr(temp, "/.."))) { // remove ../ from path
       for (sptr = tptr - 1; sptr > temp; sptr --)
         if (*sptr == '/') break; // seek back to last dir
       if (sptr == temp) break; // nothing to remove
       *sptr = '\0'; // nul-terminate
       strlcat(temp, tptr + 3, sizeof(temp)); // add rest of path
     }
-    while (tptr = strstr(temp, "/./")) { // remove ./ from path
+    while ((tptr = strstr(temp, "/./"))) { // remove ./ from path
       *tptr = '\0';
       strlcat(temp, tptr + 2, sizeof(temp));
     }
@@ -1990,7 +2079,7 @@ void Fl_Help_View::follow_link(Fl_Help_Link *lp) // I - Link pointer
         strlcpy(d->lpath, d->path, sizeof(d->lpath)); // last path
         strlcpy(d->path, temp, sizeof(d->path)); // link for history
       }
-      else if (tptr = strrchr(temp, '/')) { // store valid ext
+      else if ((tptr = strrchr(temp, '/'))) { // store valid ext
         if (strstr(tptr, ".htm") || strstr(tptr, ".txt")) {
           strlcpy(d->lpath, d->path, sizeof(d->lpath)); // last path
           strlcpy(d->path, temp, sizeof(d->path)); // link for history
@@ -2006,14 +2095,14 @@ void Fl_Help_View::follow_link(Fl_Help_Link *lp) // I - Link pointer
   else if (target[0]) // Target in link
   {
     if (d->ispath) { // path is used
-      if (tptr = strrchr(d->path, '#')) *tptr = '\0'; // remove target
+      if ((tptr = strrchr(d->path, '#'))) *tptr = '\0'; // remove target
       strlcat(d->path, "#", sizeof(d->path));
       strlcat(d->path, target, sizeof(d->path));
       load(d->path); // load target for history
     }
-    // rem'd - topline(target);
+    //topline(target); // rem'd
   }
-  // rem'd - else topline(0); leftline(0);
+  //else topline(0); leftline(0); // rem'd
 
 /*printf("\nFl_Help_Target\n");
 printf(" targets=%s\n",d->targets->filename);
@@ -2038,19 +2127,20 @@ printf(" lpath=%s\n",d->lpath);*/
 //
 // Fl_Help_View::font_face() - Get a font face from a list of names.
 //
+
 // Usage: parses a comma-separated string of font names in order of
 // preference and returns the font face.
 
 int // O - font face or base font list index
 Fl_Help_View::font_face(const char *sp) // I - name of font to find
 {
-  char buf[48], namebuf[48]; // buffers
-  const char *listp, *namep, *wordp[4]; // pointers
+  char buf[100], namebuf[100]; // buffers
+  const char *listp, *namep; // pointers
   int ti = 0, tj = 0, tk = 0, // temp loop vars
     tnum = 0, lnum = 0, fnum = 0, // temp/last/font counters
-    nfonts = 0, nwords = 0, nfaces = 0, // number of <var name>
-    temp = 0, slen = 0, fword = 0; // misc
-  unsigned char flen[8]; // font name lengths
+    nfonts = 0, nfaces = 0, // numbers
+    temp = 0, slen = 0, dfont = 0; // misc
+  unsigned char flen[10]; // font name lengths
 
   slen = strlen(sp); // string length
   if (!slen) return 0; // sp not valid
@@ -2076,24 +2166,18 @@ Fl_Help_View::font_face(const char *sp) // I - name of font to find
   for (ti = 0, listp = sp; ti < nfaces; ti ++) // main loop
   {
     while (*listp == ',') listp ++; // skip ',' chars
-    if (flen[ti] > 47) flen[ti] = 47; // max buffer size
+    if (flen[ti] > sizeof(buf)-1) flen[ti] = sizeof(buf)-1; // max buffer size
 
-    // split words up as xfont names can be concatenated
-    for (tj = 0, tk = 0, nwords = 0; tj < flen[ti]; tj ++, listp ++) {
-      buf[tj] = tolower(*listp); // copy char to lowercase
-      if (nwords < 4) { // not max words
-        if (isspace(buf[tj])) tk = 0; else tk ++; // word char index
-        if (tk == 0) buf[tj] = '\0'; // split words
-        if (tk == 1) { // found start of word
-          wordp[nwords] = buf + tj; // set word pointer
-          nwords ++; // next word
-        }
-      }
+	  for (tj = 0, tk = 0; tj < flen[ti]; tj ++) { // remove spaces in font names
+		  if (isspace(listp[tj])) continue;
+		  else if (listp[tj] == '-') break;
+		  buf[tk] = tolower(listp[tj]); // copy char to lowercase
+		  tk ++;
     }
     buf[tj] = '\0'; // nul-terminate
-
-    fnum = (uchar)*wordp[0] - 97; // first letter index, a = 0
-    if (fnum > 25) continue; // not a..z, assume font starts with letter
+	  
+    fnum = (uchar)*buf - 97; // first letter index, a = 0
+    if (fnum < 0 || fnum > 25) continue; // not a..z, assume font starts with letter
     tnum = flet_[fnum]; // current face index, loop start
     for (tj = fnum + 1; tj < 27; tj ++) {
       if (flet_[tj] > 0) {
@@ -2101,49 +2185,37 @@ Fl_Help_View::font_face(const char *sp) // I - name of font to find
       }
     }
 
-    slen = strlen(wordp[0]); // first word length
+    slen = strlen(buf); // first word length
     for (tj = tnum; tj < lnum; tj ++) { // find current font
       fnum = face_[tj][0]; // base font index
       namep = Fl::get_font_name((Fl_Font)fnum, &temp); // fltk font name
-      for (tk = 0; namep[tk] != '\0'; tk ++)
-        namebuf[tk] = tolower(namep[tk]); // copy chars to lowercase
+		for (tk = 0, temp = 0; namep[tk] != '\0'; tk ++) { // remove spaces in font name
+			if (isspace(namep[tk])) continue;
+			else if (namep[tk] == '-') break;
+			namebuf[temp] = tolower(namep[tk]); // copy chars to lowercase
+			temp ++;
+		}
       namebuf[tk] = '\0'; // nul-terminate
-      if (!strncmp(namebuf, wordp[0], slen)) { // found first word
-        for (tk = 1, temp = 1; namebuf[tk] != '\0'; tk ++) // count words
-          if (isspace(namebuf[tk])) temp ++; // exact match, so only base font
-        if (temp != nwords) continue; // skip this font
-        for (tk = 1, temp = 1; tk < nwords; tk ++)
-          if (strstr(namebuf, wordp[tk])) temp ++;
-        if (temp == nwords) return fnum; // found all words
-      }
+		if (!strncmp(namebuf, buf, slen)) // found name
+			return fnum;
     }
-    
-    if (nwords == 1 && !fword) { // check default fonts
-      if (!strncmp(wordp[0], "courier", 7)) fword = monofont_;
-      if (!strncmp(wordp[0], "times", 5)) fword = serifont_;
-      if (!strncmp(wordp[0], "helvetica", 9)) fword = sansfont_;
+	
+    if (!dfont) { // check default fonts
+      if (!strncmp(buf, "courier", 7)) dfont = monofont_;
+      if (!strncmp(buf, "times", 5)) dfont = serifont_;
+      if (!strncmp(buf, "helvetica", 9)) dfont = sansfont_;
     }
-    
-    for (tj = tnum; tj < lnum; tj ++) { // find current font
-      fnum = face_[tj][0]; // base font index
-      namep = Fl::get_font_name((Fl_Font)fnum, &temp); // fltk font name
-      for (tk = 0; namep[tk] != '\0'; tk ++)
-        namebuf[tk] = tolower(namep[tk]); // copy chars to lowercase
-      namebuf[tk] = '\0'; // nul-terminate
-      if (!strncmp(namebuf, wordp[0], slen) && !fword) fword = fnum; // found first word
-    }
-
   }
-
-  return fword; // use first word match if font not found, helvetica is 0
+	return dfont;
 
 } // Fl_Help_View::font_face()
 
 //
 // Fl_Help_View::font_style() - Get a font style from a font list index.
 //
+
 // Usage: the font style argument takes the values:
-// medium as 0, bold as 1, italic as 2, bold+italic or plus as 3.
+// medium as 0, bold as 1, italic as 2, plus as 3.
 
 int // O - font list index
 Fl_Help_View::font_style(int fi, // I - font list index
@@ -2151,8 +2223,8 @@ Fl_Help_View::font_style(int fi, // I - font list index
 {
   int ti = 0; // temp loop var
 
-  if (fs > 3) return 0; // avoid crash
-  for (ti = 0; ti < 4; ti ++) // find style
+  if (fs > 3 || fi >= (int)sizeof(fref_)) return 0; // avoid crash
+  for (ti = 0; ti <= 3; ti ++) // find style
     if (fi == face_[fref_[fi]][ti]) break;
   ti |= fs; // combine bits
   return face_[fref_[fi]][ti];
@@ -2217,15 +2289,15 @@ void Fl_Help_View::format()
     tcolumns[HV_64][HV_16], // nested table column widths
     tcells[HV_64][HV_16], // nested table cell blocks
     rowdata[3][HV_16], // row data - row,column,block
-    tfonts[HV_16 + 1], // table fonts - nfonts_
+    tfonts[HV_16 + 1], // table fonts - d->nfonts
     ultype[HV_16]; // ul type array, 10 nesting levels should do
   unsigned char thsize, tfsize; // font sizes
   fl_margins margins; // Left margin stack
   Fl_Help_Block *block, // Current block
     *cell, // Current table cell
     b, // current block object
-    *tempb = 0, // temp block
-    *cssb = 0; // current css block
+    *tempb = 0; // temp block
+    //*cssb = 0; // current css block - not used
   Fl_Color tclr, rclr, // Table/row background color
     tbclr[2][HV_16]; // nested table/tr bgcolor
   Fl_Boxtype bt = (box()) ? box() : FL_DOWN_BOX; // Box to draw
@@ -2246,7 +2318,7 @@ void Fl_Help_View::format()
   hsize_ = w() - ss - Fl::box_dw(bt);
   hwidth = hsize_; // used in add_block instead of hsize_
 
-//printf("\n FORMAT\n");
+//printf("\n FORMAT\n%s",value_);
 
   done = 0;
   while (!done)
@@ -2316,7 +2388,7 @@ void Fl_Help_View::format()
           }
 
           if (needspace && b.x > block->x)
-            b.w += (int)fl_width(' ');
+            b.w += (int)fl_width(" ");
 
           // no new line if word too long and no word before it
           if (!(b.x < 7 && b.w > block->w) && (b.x + b.w > block->w)) {
@@ -2363,14 +2435,14 @@ void Fl_Help_View::format()
               //b.h = b.fsize + 2; // Set b.h
             }
             else if (*ptr == '\t') {
-              ti = linew / (int)fl_width(' '); // number of chars, monospace
+              ti = linew / (int)fl_width(" "); // number of chars, monospace
               tempw = 8 - (ti & 7); // number of tabs 1..8
-              b.x += tempw * (int)fl_width(' '); // pre tabs width fix
-              linew += tempw * (int)fl_width(' ');
+              b.x += tempw * (int)fl_width(" "); // pre tabs width fix
+              linew += tempw * (int)fl_width(" ");
             }
             else {
-              b.x += (int)fl_width(' ');
-              linew += (int)fl_width(' ');
+              b.x += (int)fl_width(" ");
+              linew += (int)fl_width(" ");
             }
 
             if (b.fsize + 2 > b.h) b.h = b.fsize + 2; // Set b.h
@@ -2825,7 +2897,7 @@ void Fl_Help_View::format()
           }
 
           if (needspace && b.x > block->x)
-            b.w += (int)fl_width(' ');
+            b.w += (int)fl_width(" ");
 
           if ((b.x + b.w) > block->w) {
             block->end = tagptr;
@@ -2920,7 +2992,7 @@ void Fl_Help_View::format()
           else { // relative
             if (d->ispath) { // path is used
               strlcpy(tchar, d->path, sizeof(tchar));
-              if (tp = strrchr(tchar, '/')) // replace filename
+              if ((tp = strrchr(tchar, '/'))) // replace filename
                 strlcpy(tp + 1, tcss, sizeof(tchar)-(tp + 1 - tchar));
             }
             else { // use directory
@@ -2929,19 +3001,19 @@ void Fl_Help_View::format()
             }
           }
           
-          while (tp = strstr(tchar, "/..")) { // remove ../ from path
+          while ((tp = strstr(tchar, "/.."))) { // remove ../ from path
             for (ap = tp - 1; ap > tchar; ap --)
               if (*ap == '/') break; // seek back to last dir
             if (ap == tchar) break; // nothing to remove
             *ap = '\0'; // nul-terminate
             strlcat(tchar, tp + 3, sizeof(tchar)); // add rest of path
           }
-          while (tp = strstr(tchar, "/./")) { // remove ./ from path
+          while ((tp = strstr(tchar, "/./"))) { // remove ./ from path
             *tp = '\0';
             strlcat(tchar, tp + 2, sizeof(tchar));
           }
                     
-          if (tp = strrchr(tcss, '.')) { // check valid ext
+          if ((tp = strrchr(tcss, '.'))) { // check valid ext
             if (strstr(tp, ".css")) load_css(tchar);
           }
           tcss[0] = '\0'; // reset
@@ -3077,7 +3149,7 @@ void Fl_Help_View::format()
             }
           }
           if (ntables < HV_16) ntables ++; // max limit
-          tfonts[ntables] = nfonts_; // number of fonts
+          tfonts[ntables] = d->nfonts; // number of fonts
 
           block->end = tagptr;
           line = do_align(block, line, b.x, newalign, links);
@@ -3176,7 +3248,7 @@ void Fl_Help_View::format()
           line = 0;
           newalign = talign;
 
-          nfonts_ = tfonts[ntables] + 1; // number of fonts + 1 for pop
+          d->nfonts = tfonts[ntables] + 1; // number of fonts + 1 for pop
           popfont(b.font, b.fsize); // tables not popping last font fix
 
           if (ntables >= 0) ntables --; // min limit
@@ -3264,7 +3336,7 @@ void Fl_Help_View::format()
             }
 
             if (ntables >= 0)
-              nfonts_ = tfonts[ntables]; // pop number of fonts
+              d->nfonts = tfonts[ntables]; // pop number of fonts
 
             b.font = serifont_;
             b.fsize = fontsize_;
@@ -3516,8 +3588,8 @@ void Fl_Help_View::format()
           ;
         else if (!head) // unrecognized tag so draw it
         {
-          b.x += (int)fl_width('<'); // add width of '<' char
-          linew += (int)fl_width('<');
+          b.x += (int)fl_width("<"); // add width of '<' char
+          linew += (int)fl_width("<");
           ptr = tagptr + 1; // start of tag + 1
         }
         
@@ -3596,7 +3668,7 @@ void Fl_Help_View::format()
         }
 
         if (needspace && b.x > block->x)
-          b.w += (int)fl_width(' ');
+          b.w += (int)fl_width(" ");
 
         // no new line if word too long and no word before it
         if (!(b.x < 7 && b.w > block->w) && (b.x + b.w) > block->w) {
@@ -3698,7 +3770,7 @@ void Fl_Help_View::format()
 } // Fl_Help_View::format()
 
 //
-// Fl_Help_View::format_table() - obsolete, code moved to new function.
+// Fl_Help_View::format_table() - replaced, code moved
 //
 
 void Fl_Help_View::format_table(int *tw, // O - Total table width
@@ -3751,12 +3823,13 @@ Fl_Help_View::format_table(int &tw, // O - Total table width
     imgw = 0, // Image width
     imgh = 0, // Image height
     qch = 0, // Quote char
-    nfonts = 0; // local font stack index
+    nfonts = 0, // local font stack index
+	font = 0; // Current font
+  unsigned char fsize; // Current font size
   int mincols[HV_64], // Minimum widths for each column
     widths[HV_64], // td width attributes
     colspans[HV_64], // min width in colspan cells
-    columns[HV_64]; // nested table column widths
-  unsigned char font, fsize, // Current font and size
+    columns[HV_64], // nested table column widths
     fonts[HV_64][2]; // local font stack
   Fl_Shared_Image *img = 0; // Shared image - rem'd NULL
   Fl_Boxtype bt = (box()) ? box() : FL_DOWN_BOX; // Box size
@@ -3834,10 +3907,10 @@ Fl_Help_View::format_table(int &tw, // O - Total table width
           }
         }
         else if (*ptr == '\t') { // tab char
-          ti = linew / (int)fl_width(' '); // number of chars, monospace
+          ti = linew / (int)fl_width(" "); // number of chars, monospace
           tempw = 7 - (ti & 7); // number of tabs 0..7
           if (tempw) // pre tabs width fix
-            linew += tempw * (int)fl_width(' ');
+            linew += tempw * (int)fl_width(" ");
         }
       }
     }
@@ -4049,7 +4122,7 @@ Fl_Help_View::format_table(int &tw, // O - Total table width
 
           linew += imgw;
           if (needspace) {
-            linew += (int)fl_width(' ');
+            linew += (int)fl_width(" ");
             needspace = 0;
           }
           if (linew > maxlinew) maxlinew = linew;
@@ -4350,7 +4423,7 @@ Fl_Help_View::format_table(int &tw, // O - Total table width
           ;
         else if (!head) // unrecognized tag so draw it
         {
-          linew += (int)fl_width('<'); // add width of '<' char
+          linew += (int)fl_width("<"); // add width of '<' char
           ptr = tagptr + 1; // start of tag + 1
         }
     } // if (*ptr == '<')
@@ -5065,13 +5138,13 @@ Fl_Help_View::get_image(const char *np, // Image filename
                         int ih) // Image height
 {
   const char *namep; // Local filename
-  char dir[1024]; // Current directory
-  char temp[1024], // Temporary filename
-    *tptr; // Pointer into temporary name
+  char dir[1024], // Current directory
+    temp[1024], // Temporary filename
+    *tptr, *dirp; // Pointer into temporary name
   Fl_Shared_Image *imgp; // Image pointer
 
   // See if the image can be found
-  if (strchr(directory_, ':') && !strchr(np, ':')) // rem'd  != 0 and == 0
+  if (strchr(directory_, ':') && !strchr(np, ':')) // rem'd != 0 and == 0
   { // dir has ':' char and np doesn't
     if (np[0] == '/') { // Has sub-path
       strlcpy(temp, directory_, sizeof(temp));
@@ -5093,7 +5166,7 @@ Fl_Help_View::get_image(const char *np, // Image filename
     if (directory_[0])
       snprintf(temp, sizeof(temp), "%s/%s", directory_, np);
     else {
-      getcwd(dir, sizeof(dir)); // No end '/' char - can be wrong..
+      dirp = getcwd(dir, sizeof(dir)); // No end '/' char - can be wrong..
       snprintf(temp, sizeof(temp), "%s/%s", dir, np);
     }
 
@@ -5112,7 +5185,7 @@ Fl_Help_View::get_image(const char *np, // Image filename
 
   if (d->ispath) { // path is used
     strlcpy(temp, d->path, sizeof(temp));
-    if (tptr = strrchr(temp, '/')) // tptr valid, add filename
+    if ((tptr = strrchr(temp, '/'))) // tptr valid, add filename
       strlcpy(tptr + 1, np, sizeof(temp)-(tptr + 1 - temp));
     namep = temp;
   }
@@ -5313,8 +5386,8 @@ void Fl_Help_View::hv_draw(const char *tp, // I - Text to draw
     Fl_Color clr = fl_color();
     fl_color(hv_selection_color);
     width = (int)fl_width(tp);
-    if (current_pos + strlen(tp) < selection_last) // rem'd (int)
-      width += (int)fl_width(' ');
+    if (current_pos + (int)strlen(tp) < selection_last)
+      width += (int)fl_width(" ");
     fl_rectf(xx, yy + fl_descent() - fl_height(), width, fl_height());
     fl_color(hv_selection_text_color);
     fl_draw(tp, xx, yy);
@@ -5348,6 +5421,16 @@ void Fl_Help_View::hv_draw(const char *tp, // I - Text to draw
 } // Fl_Help_View::hv_draw()
 
 //
+// Fl_Help_View::initfont() - Initialize font stack.
+//
+
+void Fl_Help_View::initfont(int &fi, 
+                            unsigned char &fs) { // reset stack
+	d->nfonts = 0;
+	fl_font(fi = d->fonts[0][0] = serifont_, fs = d->fonts[0][1] = fontsize_);
+}
+
+//
 // Fl_Help_View::leftline() - Set the left line position.
 //
 
@@ -5374,6 +5457,7 @@ int // O - 0 on success, -1 on error
 Fl_Help_View::load(const char *fp) // I - File to load, may have target
 {
   FILE *filep; // File to read from
+  size_t fsize; // file size
   long len = 0; // Length of file
   char *target, // Target in file
     *slash; // Directory separator
@@ -5418,7 +5502,7 @@ Fl_Help_View::load(const char *fp) // I - File to load, may have target
   else if (slash > directory_ && slash[-1] != '/')
     *slash = '\0'; // Remove filename, assumes filename exists
 
-  // rem'd if (value_) { free((void *)value_); value_ = 0; }
+  //if (value_) { free((void *)value_); value_ = 0; } // rem'd
   free_data(); // free last document
 
   if (!strncmp(namep, "ftp:", 4) || !strncmp(namep, "http:", 5) ||
@@ -5443,7 +5527,7 @@ Fl_Help_View::load(const char *fp) // I - File to load, may have target
       rewind(filep); // like fseek(fp, 0, SEEK_SET)
 
       value_ = (const char *)calloc(len + 1, 1); // malloc but zero'd
-      fread((void *)value_, 1, len, filep);
+      fsize = fread((void *)value_, 1, len, filep);
       fclose(filep);
     }
     else { // File not opened
@@ -5487,6 +5571,7 @@ int // O - 0 if file loaded, -1 if error
 Fl_Help_View::load_css(const char *fp) // I - file to load
 {
   FILE *filep; // file to read from
+  size_t fsize; // file size
   int ti = 0, tj = 0,
     isblock = 0, isstr = 0,
     tcount = 0, tstart = 0,
@@ -5545,7 +5630,7 @@ Fl_Help_View::load_css(const char *fp) // I - file to load
       }
       
       *(tp + len) = '\0'; // nul-terminate file
-      fread((void *)tp, 1, len, filep);
+      fsize = fread((void *)tp, 1, len, filep);
       fclose(filep);
 
       for (ti = 0; ti < len; ti ++) { // count words
@@ -5645,6 +5730,26 @@ void Fl_Help_View::parse_css(Fl_Help_Block &b, // O - current block
   return;
   
 } // Fl_Help_View::parse_css()
+
+//
+// Fl_Help_View::popfont() - Pop from font stack.
+//
+
+void Fl_Help_View::popfont(int &fi, 
+                           unsigned char &fs) { // pop font
+	if (d->nfonts > 0) d->nfonts --;
+	fl_font(fi = d->fonts[d->nfonts][0], fs = d->fonts[d->nfonts][1]);
+}
+
+//
+// Fl_Help_View::pushfont() - Push to font stack.
+//
+
+void Fl_Help_View::pushfont(int fi, 
+                            unsigned char fs) { // push font
+	if (d->nfonts < 99) d->nfonts ++;
+	fl_font(d->fonts[d->nfonts][0] = fi, d->fonts[d->nfonts][1] = fs);
+}
 
 //
 // Fl_Help_View::resize() - Resize the help widget.

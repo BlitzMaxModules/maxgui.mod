@@ -25,7 +25,7 @@
 //
 //     http://www.fltk.org/str.php
 //
-// Methods:
+// Inline:
 //
 //   Fl_Help_View::directory()  - Get the directory string.
 //   Fl_Help_View::filename()   - Get the filename string.
@@ -73,8 +73,8 @@ typedef const char *(Fl_Help_Func)(Fl_Widget *, const char *);
 //
 // Fl_Help_Block structure
 //
-// we can change private structs accessed by pointers and maintain BC
 
+// note: we can change private structs accessed by pointers
 struct Fl_Help_Block
 {
   const char *start, // Start of text
@@ -86,9 +86,9 @@ struct Fl_Help_Block
     w, // Width
     h; // Height
   // new fields, removed int line[32];
-  unsigned char font, // current font
-    fsize; // current font size
-  int maxh, // max image height
+  unsigned char fsize; // current font size
+  int font, // current font
+    maxh, // max image height
     imgy, // image y position
     pre, // pre text flag
     type, // blockquote/ol/ul/li type parameter
@@ -114,8 +114,8 @@ struct Fl_Help_Link
 //
 // Fl_Help_Target structure
 //
-// hijacking this lets us add new data members via the d-pointer
 
+// note: hijacking this lets us add new data members via the d-pointer
 struct Fl_Help_Target
 {
   // new fields, removed char name[32]; int y;
@@ -144,6 +144,8 @@ struct Fl_Help_Target
     *cssurl, // css url value
     path[1024], // current file path
     lpath[1024]; // last file path
+  int nfonts, // number of fonts in stack
+    fonts[100][2]; // font stack
 };
 
 //
@@ -161,16 +163,16 @@ private:
     bgcolor_, // Background color
     textcolor_, // Text color
     linkcolor_; // Link color
-  unsigned char textfont_, // Default font, obsolete
-    textsize_; // Default font size, obsolete
+  unsigned char textfont_, // Default font - replaced
+    textsize_; // Default font size - replaced
   const char *value_; // HTML text value
 
   int nblocks_, // Number of blocks/lines
     ablocks_; // Allocated blocks
   Fl_Help_Block *blocks_; // Blocks
 
-  int nfonts_; // Number of fonts in stack
-  unsigned char fonts_[100][2]; // Font stack
+  int nfonts_; // Number of fonts in stack - replaced
+  unsigned char fonts_[100][2]; // Font stack - replaced
 
   Fl_Help_Func *link_; // Link transform function
 
@@ -180,7 +182,8 @@ private:
 
   int ntargets_, // Number of targets
     atargets_; // Allocated targets
-  Fl_Help_Target *d; // d-pointer implementation, was targets_
+  Fl_Help_Target *d; // d-pointer struct - was *targets_
+  // note: we can rename existing data members
 
   char directory_[1024], // Directory for current file
     filename_[1024]; // Current filename
@@ -211,9 +214,9 @@ private:
   static int sansfont_; // default sans font
   static int monofont_; // default monospace font
   static unsigned char fontsize_; // default font size
-  static short face_[128][4]; // font face table [m,b,i,p]
-  static unsigned char flet_[32]; // first face for letter table
-  static unsigned char fref_[320]; // face reference table
+  static short face_[250][4]; // font face table [m,b,i,p]
+  static unsigned char flet_[30]; // first face for letter table
+  static unsigned char fref_[1000]; // face reference table
 
   Fl_Help_Block *add_block(const char *sp, int xx, int yy, int ww, int hh, unsigned char bc = 0);
   void add_link(const char *np, int xx, int yy, int ww, int hh);
@@ -229,17 +232,18 @@ private:
   Fl_Color get_color(const char *np, Fl_Color dc);
   Fl_Shared_Image *get_image(const char *np, int iw, int ih);
   int get_length(const char *lp);
-  //int handle(int event); // you can remove private non-virtual functions if not called by inline functions
+  //int handle(int event); // moved to public
+  // note: you can remove private non-virtual functions if not called by inline functions
 
-  void initfont(unsigned char &fi, unsigned char &fs) { // Reset stack
+  void initfont(unsigned char &fi, unsigned char &fs) { // Reset stack - replaced, for when nfonts > 255
     nfonts_ = 0;
     fl_font(fi = fonts_[0][0] = serifont_, fs = fonts_[0][1] = fontsize_);
   }
-  void pushfont(unsigned char fi, unsigned char fs) { // Push font
+  void pushfont(unsigned char fi, unsigned char fs) { // Push font - replaced
     if (nfonts_ < 99) nfonts_ ++;
     fl_font(fonts_[nfonts_][0] = fi, fonts_[nfonts_][1] = fs);
   }
-  void popfont(unsigned char &fi, unsigned char &fs) { // Pop font
+  void popfont(unsigned char &fi, unsigned char &fs) { // Pop font - replaced
     if (nfonts_ > 0) nfonts_ --;
     fl_font(fi = fonts_[nfonts_][0], fs = fonts_[nfonts_][1]);
   }
@@ -261,8 +265,11 @@ private:
   int get_css_value(const char *sp, const char *pp, char *vp);
   int get_font_size(const char *hp);
   int get_length(const char *lp, int hw);
+  void initfont(int &fi, unsigned char &fs);
   int load_css(const char *fp);
   void parse_css(Fl_Help_Block &b, const char *sp, char *buf);
+  void popfont(int &fi, unsigned char &fs);
+  void pushfont(int fi, unsigned char fs);
 
 public:
 
@@ -302,14 +309,15 @@ public:
   }
   void textfont(unsigned char fi) { // Set the text font, obsolete
     textfont_ = fi;
-    // removed format();
+    //format(); // removed
+	// note: we can remove the contents of inline functions
   }
   unsigned char textfont() const { // Get the text font, obsolete
     return textfont_;
   }
   void textsize(unsigned char fs) { // Set the default font size
     fontsize_ = fs;
-    // removed format();
+    //format(); // removed
   }
   unsigned char textsize() const { // Get the default font size
     return fontsize_;
@@ -344,7 +352,7 @@ public:
   int font_face(const char *sp);
   int font_style(int fi, unsigned char fs);
   int gettopline();
-  int handle(int event); // moved from private functions
+  int handle(int event); // moved from private
 
   void monofont(int fi) { // set the default mono font
     monofont_ = fi;
