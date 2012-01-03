@@ -3738,8 +3738,8 @@ void NSAddItem(nsgadget *gadget,int index,BBString *data,BBString *tip,NSImage *
 		break;
 	case GADGET_TOOLBAR:	
 		toolbar=(Toolbar*)gadget->handle;
-		if (image==0){
-			[toolbar insertItemWithItemIdentifier:NSToolbarSeparatorItemIdentifier atIndex:index];
+		if (image==0){			
+			[toolbar insertItemWithItemIdentifier:NSToolbarSpaceItemIdentifier atIndex:index];	// Use NSToolbarSpaceItemIdentifier in Lion	
 		}
 		else{
 			item=[[NSToolbarItem alloc] initWithItemIdentifier:text];
